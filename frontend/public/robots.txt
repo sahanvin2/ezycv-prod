@@ -1,0 +1,10 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+Disallow: /dashboard
+
+# Sitemap
+Sitemap: https://cvmaker-pro.com/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1
