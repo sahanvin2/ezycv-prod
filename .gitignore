@@ -33,6 +33,9 @@ Thumbs.db
 *.pem
 *.key
 
+# Secure setup scripts with real credentials
+secure-setup.sh
+
 # Uploads (if large)
 backend/uploads/wallpapers/*.jpg
 backend/uploads/wallpapers/*.webp
