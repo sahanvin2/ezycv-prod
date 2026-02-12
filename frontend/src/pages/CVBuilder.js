@@ -4,8 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useCVStore, useStatsStore } from '../store/store';
 import { LargeBannerAd, NativeBannerAd, InterstitialAd } from '../components/Ads/AdComponents';
 import CVPreview from '../components/CVPreview';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import KeywordSuggestions from '../components/KeywordSuggestions';
 import toast from 'react-hot-toast';
 import { showAdBeforeDownload } from '../utils/adHelper';
 
@@ -15,6 +14,7 @@ const CVBuilder = () => {
   const { incrementCVs, incrementDownloads, trackTemplateUsed } = useStatsStore();
   const [showInterstitial, setShowInterstitial] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isPreparingPDF, setIsPreparingPDF] = useState(false);
   const cvPreviewRef = useRef(null);
   const [searchParams] = useSearchParams();
 
@@ -66,203 +66,39 @@ const CVBuilder = () => {
 
   const generatePDF = async () => {
     setIsGenerating(true);
+    setIsPreparingPDF(true);
+    
     try {
-      const element = cvPreviewRef.current;
-      if (!element) {
-        toast.error('Preview not available');
-        return;
-      }
-
-      // Wait for any images to fully load with better handling
-      const images = element.getElementsByTagName('img');
-      const imageLoadPromises = Array.from(images).map(img => {
-        return new Promise((resolve) => {
-          if (img.complete && img.naturalHeight !== 0) {
-            resolve();
-          } else {
-            const handleLoad = () => {
-              img.removeEventListener('load', handleLoad);
-              img.removeEventListener('error', handleError);
-              resolve();
-            };
-            const handleError = () => {
-              img.removeEventListener('load', handleLoad);
-              img.removeEventListener('error', handleError);
-              resolve();
-            };
-            img.addEventListener('load', handleLoad);
-            img.addEventListener('error', handleError);
-            // Timeout after 5 seconds
-            setTimeout(resolve, 5000);
-          }
-        });
-      });
-      await Promise.all(imageLoadPromises);
+      // Wait for print preview to mount and render
+      await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Small delay to ensure all rendering is complete
-      await new Promise(resolve => setTimeout(resolve, 200));
-
-      // Enhanced html2canvas options for better PDF output with fixed photo
-      const canvas = await html2canvas(element, {
-        scale: 2, // Good balance between quality and performance
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-        width: 595,
-        height: element.scrollHeight > 842 ? element.scrollHeight : 842,
-        letterRendering: true,
-        imageTimeout: 10000,
-        removeContainer: false,
-        foreignObjectRendering: false,
-        onclone: (clonedDoc, clonedElement) => {
-          // Ensure the CV preview element has correct dimensions
-          if (clonedElement) {
-            clonedElement.style.transform = 'none';
-            clonedElement.style.width = '595px';
-            clonedElement.style.minHeight = '842px';
-            clonedElement.style.overflow = 'visible';
-          }
-          
-          // Fix ALL images - especially circular profile photos
-          const allImages = clonedDoc.querySelectorAll('img');
-          allImages.forEach(img => {
-            if (!img.src) return;
-            
-            const parent = img.parentElement;
-            if (!parent) return;
-            
-            // Get the parent's computed dimensions
-            const parentStyle = window.getComputedStyle(parent);
-            const parentWidth = parseFloat(parentStyle.width);
-            const parentHeight = parseFloat(parentStyle.height);
-            
-            // Check if parent is circular (profile photo container)
-            const isCircular = parentStyle.borderRadius === '50%' || 
-                               parentStyle.borderRadius.includes('50%');
-            
-            if (isCircular && parentWidth > 0 && parentHeight > 0) {
-              // Use the SMALLER dimension to ensure square aspect ratio
-              const size = Math.min(parentWidth, parentHeight);
-              
-              // Force square dimensions on parent
-              parent.style.cssText = `
-                width: ${size}px !important;
-                height: ${size}px !important;
-                min-width: ${size}px !important;
-                min-height: ${size}px !important;
-                max-width: ${size}px !important;
-                max-height: ${size}px !important;
-                overflow: hidden !important;
-                border-radius: 50% !important;
-                display: block !important;
-                position: relative !important;
-                flex-shrink: 0 !important;
-              `;
-              
-              // Force square dimensions on image with cover
-              img.style.cssText = `
-                width: ${size}px !important;
-                height: ${size}px !important;
-                min-width: ${size}px !important;
-                min-height: ${size}px !important;
-                max-width: ${size}px !important;
-                max-height: ${size}px !important;
-                object-fit: cover !important;
-                object-position: center center !important;
-                display: block !important;
-                border-radius: 50% !important;
-                aspect-ratio: 1 / 1 !important;
-              `;
-              
-              // Also set width/height attributes for html2canvas
-              img.setAttribute('width', size);
-              img.setAttribute('height', size);
-            }
-          });
-          
-          // Fix SVG icons to ensure they render properly in PDF
-          const svgs = clonedDoc.querySelectorAll('svg');
-          svgs.forEach(svg => {
-            svg.style.display = 'inline-block';
-            svg.style.verticalAlign = 'middle';
-            svg.style.flexShrink = '0';
-            svg.style.overflow = 'visible';
-          });
-          
-          // Fix icon wrapper spans for consistent alignment in PDF
-          const iconWrappers = clonedDoc.querySelectorAll('span[style*="inline-flex"]');
-          iconWrappers.forEach(wrapper => {
-            wrapper.style.display = 'inline-flex';
-            wrapper.style.alignItems = 'center';
-            wrapper.style.justifyContent = 'center';
-            wrapper.style.verticalAlign = 'middle';
-            wrapper.style.lineHeight = '0';
-            wrapper.style.position = 'static';
-          });
-
-          // Fix flex containers for proper alignment
-          const flexContainers = clonedDoc.querySelectorAll('[style*="display: flex"]');
-          flexContainers.forEach(container => {
-            // Ensure gap works properly
-            const gap = container.style.gap;
-            if (gap) {
-              container.style.gap = gap;
-            }
-          });
-        }
-      });
-
-      const imgData = canvas.toDataURL('image/png', 1.0);
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-        compress: true
-      });
-      
-      const pageWidth = 210; // A4 width in mm
-      const pageHeight = 297; // A4 height in mm
-      const imgWidth = pageWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      // If content fits on one page
-      if (imgHeight <= pageHeight) {
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight, undefined, 'FAST');
-      } else {
-        // Handle multi-page content with proper page breaks
-        let heightLeft = imgHeight;
-        let position = 0;
-        let pageCount = 0;
-        const maxPages = 5; // Limit to prevent infinite loops
-        
-        while (heightLeft > 0 && pageCount < maxPages) {
-          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
-          heightLeft -= pageHeight;
-          position -= pageHeight;
-          pageCount++;
-          
-          if (heightLeft > 0 && pageCount < maxPages) {
-            pdf.addPage();
-          }
-        }
-      }
-      
+      // Set document title for PDF filename
+      const originalTitle = document.title;
       const fileName = currentCV.personalInfo.fullName 
-        ? `${currentCV.personalInfo.fullName.replace(/\s+/g, '_')}_CV.pdf`
-        : 'My_CV.pdf';
-      pdf.save(fileName);
+        ? `${currentCV.personalInfo.fullName.replace(/\s+/g, '_')}_CV`
+        : 'My_CV';
+      document.title = fileName;
+      
+      // Trigger browser's native print dialog (user can save as PDF)
+      window.print();
+      
+      // Restore original title
+      document.title = originalTitle;
       
       // Update live stats
       incrementCVs();
       incrementDownloads();
       
-      toast.success('CV downloaded successfully!');
+      toast.success('Print dialog opened! Choose "Save as PDF" to download.');
     } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast.error('Failed to generate PDF. Please try again.');
+      console.error('Error opening print dialog:', error);
+      toast.error('Failed to open print dialog. Please try again.');
     } finally {
-      setIsGenerating(false);
+      // Keep preview mounted for print, clean up after a delay
+      setTimeout(() => {
+        setIsGenerating(false);
+        setIsPreparingPDF(false);
+      }, 1000);
     }
   };
 
@@ -350,6 +186,31 @@ const CVBuilder = () => {
                 <span className="hidden sm:inline text-sm font-medium">{step.name}</span>
               </motion.button>
             ))}
+          </div>
+
+          {/* Animated Progress Bar */}
+          <div className="mt-4 relative h-2 bg-gray-200 rounded-full overflow-hidden">
+            <motion.div
+              className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${(currentStep / 6) * 100}%` }}
+              transition={{ duration: 0.5, ease: "easeInOut" }}
+            />
+            <motion.div
+              className="absolute top-0 left-0 h-full w-full bg-gradient-to-r from-transparent via-white/30 to-transparent"
+              animate={{ x: ['-100%', '200%'] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            />
+          </div>
+
+          {/* Completion Stats */}
+          <div className="mt-3 flex items-center justify-between text-sm">
+            <span className="text-gray-600 font-medium">
+              Overall Progress: {Math.round((currentStep / 6) * 100)}%
+            </span>
+            <span className="text-blue-600 font-semibold">
+              {currentStep === 6 ? '🎉 Ready to download!' : `${6 - currentStep} step${6 - currentStep !== 1 ? 's' : ''} remaining`}
+            </span>
           </div>
         </div>
       </div>
@@ -452,6 +313,13 @@ const CVBuilder = () => {
             
             {/* Side Ad - removed */}
           </div>
+
+          {/* Hidden print-optimized preview (only rendered during PDF generation) */}
+          {isPreparingPDF && (
+            <div style={{ position: 'absolute', left: '-9999px', top: 0 }} data-cv-print="true">
+              <CVPreview data={currentCV} forPDF={false} />
+            </div>
+          )}
         </div>
       </div>
 
@@ -1317,28 +1185,15 @@ const SkillsForm = () => {
           </motion.button>
         </div>
 
-        {/* Suggested skills */}
-        <div className="mt-4 pt-4 border-t border-blue-200">
-          <p className="text-xs text-blue-600 mb-2 font-medium">💡 Popular skills (click to add):</p>
-          <div className="flex flex-wrap gap-2">
-            {['JavaScript', 'Python', 'React', 'Node.js', 'SQL', 'Git', 'AWS', 'TypeScript'].map((skill) => (
-              <button
-                key={skill}
-                onClick={() => {
-                  if (!currentCV.skills.find(s => s.name.toLowerCase() === skill.toLowerCase())) {
-                    addSkill({ name: skill, level: 'intermediate' });
-                    toast.success(`${skill} added!`);
-                  } else {
-                    toast.error(`${skill} already added`);
-                  }
-                }}
-                className="px-3 py-1 text-xs bg-white text-blue-600 rounded-full border border-blue-200 hover:bg-blue-600 hover:text-white transition-all"
-              >
-                + {skill}
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* AI-Powered Keyword Suggestions */}
+        <KeywordSuggestions
+          jobTitle={currentCV.personalInfo.jobTitle || ''}
+          currentSkills={currentCV.skills.map(s => s.name)}
+          onAddKeyword={(keyword) => {
+            addSkill({ name: keyword, level: 'intermediate' });
+            toast.success(`${keyword} added!`);
+          }}
+        />
       </div>
 
       {/* Languages Section */}

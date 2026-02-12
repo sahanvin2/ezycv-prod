@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/store';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_URL = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
 
 const api = axios.create({
   baseURL: API_URL,
@@ -48,6 +49,7 @@ api.interceptors.response.use(
 export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
+  firebaseLogin: (idToken) => api.post('/auth/firebase-login', { idToken }),
   getMe: () => api.get('/auth/me'),
   updateProfile: (data) => api.put('/auth/profile', data),
 };

@@ -1,40 +1,49 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useStatsStore } from '../store/store';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 const Home = () => {
-  const { stats } = useStatsStore();
-  const [displayStats, setDisplayStats] = useState(stats);
+  // Subscribe directly to individual stat values for granular reactivity
+  const cvsCreated = useStatsStore(state => state.stats.cvsCreated);
+  const totalDownloads = useStatsStore(state => state.stats.totalDownloads);
+  const wallpapersStore = useStatsStore(state => state.stats.wallpapers);
+  const stockPhotosStore = useStatsStore(state => state.stats.stockPhotos);
   
-  // Fetch real wallpaper & photo counts from API on mount
-  useEffect(() => {
-    const fetchRealCounts = async () => {
-      try {
-        const res = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/wallpapers/stats`);
-        if (res.ok) {
-          const data = await res.json();
-          setDisplayStats(prev => ({
-            ...prev,
-            wallpapers: data.wallpapers || prev.wallpapers,
-            stockPhotos: data.stockPhotos || prev.stockPhotos
-          }));
-        }
-      } catch (err) {
-        // Silently fallback to store values
+  const [apiStats, setApiStats] = useState({ wallpapers: null, stockPhotos: null });
+  
+  // Fetch real counts from API on mount + periodic refresh
+  const fetchRealCounts = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/wallpapers/stats`);
+      if (res.ok) {
+        const data = await res.json();
+        setApiStats({
+          wallpapers: data.wallpapers || null,
+          stockPhotos: data.stockPhotos || null
+        });
       }
-    };
-    fetchRealCounts();
+    } catch (err) {
+      // Silently fallback to store values
+    }
   }, []);
 
-  // Animate stats when they change
   useEffect(() => {
-    setDisplayStats(prev => ({
-      ...prev,
-      cvsCreated: stats.cvsCreated,
-      totalDownloads: stats.totalDownloads
-    }));
-  }, [stats]);
+    fetchRealCounts();
+    // Refresh stats every 30 seconds for live feel
+    const interval = setInterval(fetchRealCounts, 30000);
+    return () => clearInterval(interval);
+  }, [fetchRealCounts]);
+
+  // Compute final display values — API data takes priority for wallpapers/photos
+  const displayStats = {
+    cvsCreated,
+    totalDownloads,
+    wallpapers: apiStats.wallpapers ?? wallpapersStore,
+    stockPhotos: apiStats.stockPhotos ?? stockPhotosStore
+  };
   
   // Format number with K+ suffix
   const formatNumber = (num) => {
@@ -81,10 +90,10 @@ const Home = () => {
   ];
 
   const liveStats = [
-    { number: formatNumber(displayStats.cvsCreated), label: 'CVs Created', icon: '📄', color: 'from-blue-500 to-indigo-600' },
-    { number: formatNumber(displayStats.totalDownloads), label: 'Downloads', icon: '⬇️', color: 'from-green-500 to-emerald-600' },
-    { number: formatNumber(displayStats.wallpapers), label: 'Wallpapers', icon: '🖼️', color: 'from-purple-500 to-pink-600' },
-    { number: formatNumber(displayStats.stockPhotos), label: 'Stock Photos', icon: '📷', color: 'from-orange-500 to-red-600' }
+    { number: displayStats.cvsCreated, label: 'CVs Created', icon: '📄', color: 'from-blue-500 to-indigo-600' },
+    { number: displayStats.totalDownloads, label: 'Downloads', icon: '⬇️', color: 'from-green-500 to-emerald-600' },
+    { number: displayStats.wallpapers, label: 'Wallpapers', icon: '🖼️', color: 'from-purple-500 to-pink-600' },
+    { number: displayStats.stockPhotos, label: 'Stock Photos', icon: '📷', color: 'from-orange-500 to-red-600' }
   ];
 
   // Enhanced template previews with unique designs
@@ -655,14 +664,11 @@ const Home = () => {
                 
                 <div className="relative z-10 text-center">
                   <div className="text-2xl md:text-3xl mb-1 md:mb-2">{stat.icon}</div>
-                  <motion.div 
-                    key={stat.number}
-                    initial={{ scale: 1.1 }}
-                    animate={{ scale: 1 }}
+                  <div 
                     className={`text-2xl md:text-4xl font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent mb-0.5 md:mb-1`}
                   >
-                    {stat.number}
-                  </motion.div>
+                    {formatNumber(stat.number)}
+                  </div>
                   <div className="text-gray-600 text-xs md:text-sm font-medium">{stat.label}</div>
                 </div>
                 
@@ -757,6 +763,111 @@ const Home = () => {
               className="inline-flex items-center gap-2 px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 text-white font-semibold rounded-xl hover:from-blue-700 hover:via-purple-700 hover:to-pink-600 transition-all shadow-lg hover:shadow-xl text-sm md:text-base"
             >
               View All Templates
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Wallpapers Preview Section */}
+      <section className="py-12 md:py-20 bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10 md:mb-12">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+            >
+              <span className="inline-block px-4 py-1 bg-purple-100 text-purple-600 rounded-full text-sm font-medium mb-3 md:mb-4">
+                🖼️ Free HD Wallpapers
+              </span>
+              <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-3 md:mb-4">
+                Stunning Wallpapers Collection
+              </h2>
+              <p className="text-gray-600 text-base md:text-lg max-w-2xl mx-auto">
+                Refresh your screens with beautiful, high-quality wallpapers. Free for desktop and mobile!
+              </p>
+            </motion.div>
+          </div>
+
+          {/* Wallpaper Category Pills */}
+          <div className="flex flex-wrap justify-center gap-2 md:gap-3 mb-8">
+            {[
+              { name: 'Nature', icon: '🌿', color: 'from-green-400 to-emerald-500' },
+              { name: 'Abstract', icon: '🔮', color: 'from-purple-400 to-fuchsia-500' },
+              { name: 'Space', icon: '🚀', color: 'from-blue-400 to-indigo-600' },
+              { name: 'Animals', icon: '🦋', color: 'from-orange-400 to-amber-500' },
+              { name: 'Dark', icon: '🌙', color: 'from-gray-600 to-gray-800' }
+            ].map((cat, index) => (
+              <motion.div
+                key={cat.name}
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <Link
+                  to={`/wallpapers/${cat.name.toLowerCase()}`}
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r ${cat.color} text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transform hover:scale-105 transition-all`}
+                >
+                  <span>{cat.icon}</span>
+                  <span>{cat.name}</span>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Wallpaper Preview Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            {[
+              { preview: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=80', title: 'Mountain Sunrise', category: 'nature' },
+              { preview: 'https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?w=400&q=80', title: 'Cosmic Galaxy', category: 'space' },
+              { preview: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=400&q=80', title: 'Fluid Colors', category: 'abstract' },
+              { preview: 'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=400&q=80', title: 'Ocean Waves', category: 'nature' },
+              { preview: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=400&q=80', title: 'Nebula Dreams', category: 'space' },
+              { preview: 'https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=400&q=80', title: 'Gradient Art', category: 'abstract' },
+              { preview: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400&q=80', title: 'Foggy Forest', category: 'nature' },
+              { preview: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=400&q=80', title: 'Night Sky', category: 'dark' }
+            ].map((wallpaper, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="group relative rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 cursor-pointer aspect-[4/3]"
+              >
+                <Link to={`/wallpapers/${wallpaper.category}`}>
+                  <img
+                    src={wallpaper.preview}
+                    alt={wallpaper.title}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="absolute bottom-0 left-0 right-0 p-3">
+                      <p className="text-white font-medium text-sm truncate">{wallpaper.title}</p>
+                      <p className="text-white/70 text-xs capitalize">{wallpaper.category}</p>
+                    </div>
+                  </div>
+                  {/* Download hint */}
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
+                      <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                    </div>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="text-center mt-8 md:mt-12">
+            <Link
+              to="/wallpapers"
+              className="inline-flex items-center gap-2 px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 text-white font-semibold rounded-xl hover:from-purple-700 hover:via-pink-600 hover:to-orange-600 transition-all shadow-lg hover:shadow-xl text-sm md:text-base"
+            >
+              Explore All Wallpapers
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>

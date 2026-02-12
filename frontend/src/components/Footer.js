@@ -1,9 +1,48 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
+import axios from 'axios';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    
+    if (!email) {
+      toast.error('Please enter your email');
+      return;
+    }
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const API_URL = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
+      const response = await axios.post(`${API_URL}/newsletter/subscribe`, { email });
+      
+      toast.success(response.data.message || 'Thanks for subscribing! Check your email 🎉', {
+        duration: 5000,
+        icon: '💜'
+      });
+      
+      setEmail(''); // Clear the input
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Failed to subscribe. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const footerLinks = {
     'CV Builder': [
@@ -83,20 +122,25 @@ const Footer = () => {
               <h3 className="text-xl md:text-2xl font-bold text-white mb-1 md:mb-2">Stay Updated! 🚀</h3>
               <p className="text-gray-400 text-sm md:text-base">Get the latest CV tips and new templates delivered to your inbox.</p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+            <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
               <input 
                 type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
-                className="flex-1 md:w-64 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all text-sm md:text-base"
+                disabled={loading}
+                className="flex-1 md:w-64 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg shadow-blue-500/25"
+                type="submit"
+                disabled={loading}
+                whileHover={!loading ? { scale: 1.05 } : {}}
+                whileTap={!loading ? { scale: 0.95 } : {}}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg shadow-blue-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Subscribe
+                {loading ? 'Subscribing...' : 'Subscribe'}
               </motion.button>
-            </div>
+            </form>
           </div>
         </div>
       </div>

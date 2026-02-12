@@ -11,8 +11,16 @@ const CVPreview = ({ data, forPDF = false }) => {
   };
 
   // SVG Icons as inline components for PDF compatibility
-  // Using inline-flex with proper centering - no position offset needed
-  const iconBaseStyle = {
+  // Preview mode: pure inline-flex centering (looks perfect in browser)
+  // PDF mode: adds position offset to compensate for html2canvas flex rendering differences
+  const iconBaseStyle = forPDF ? {
+    display: 'inline-block',
+    flexShrink: 0,
+    verticalAlign: 'middle',
+    lineHeight: 0,
+    position: 'relative',
+    top: '2px'
+  } : {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -199,7 +207,8 @@ const CVPreview = ({ data, forPDF = false }) => {
               objectPosition: 'center center',
               display: 'block',
               borderRadius: '50%',
-              aspectRatio: '1 / 1'
+              aspectRatio: '1 / 1',
+              imageRendering: forPDF ? 'high-quality' : 'auto'
             }}
           />
         </div>
@@ -221,12 +230,28 @@ const CVPreview = ({ data, forPDF = false }) => {
     wordBreak: 'break-word'
   };
 
-  // Contact Item with Icon - proper flex alignment
+  // Contact Item with Icon - separate styles for preview vs PDF
   const ContactItem = ({ icon, text, color = 'inherit' }) => {
     if (!text) return null;
+    const iconWrapStyle = forPDF ? {
+      display: 'inline-block',
+      width: '12px',
+      height: '12px',
+      flexShrink: 0,
+      verticalAlign: 'middle',
+      position: 'relative',
+      top: '2px'
+    } : {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '12px',
+      height: '12px',
+      flexShrink: 0
+    };
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', fontSize: '10px', color, lineHeight: '1.4' }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '12px', height: '12px', flexShrink: 0 }}>{icon}</span>
+        <span style={iconWrapStyle}>{icon}</span>
         <span style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>{text}</span>
       </div>
     );

@@ -18,7 +18,7 @@ const wallpaperSchema = new mongoose.Schema({
   deviceType: {
     type: String,
     required: true,
-    enum: ['desktop', 'mobile']
+    enum: ['desktop', 'mobile', 'both']
   },
   imageUrl: {
     type: String,

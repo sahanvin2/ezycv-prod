@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_URL = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
+
 const Contact = () => {
   const [formData, setFormData] = useState({
     name: '',
@@ -15,12 +18,32 @@ const Contact = () => {
     e.preventDefault();
     setLoading(true);
     
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    toast.success('Message sent successfully! We\'ll get back to you soon.');
-    setFormData({ name: '', email: '', subject: '', message: '' });
-    setLoading(false);
+    try {
+      const response = await fetch(`${API_URL}/contact`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success('Message sent! We\'ll get back to you soon. 💜', {
+          duration: 5000,
+          icon: '✉️'
+        });
+        setFormData({ name: '', email: '', subject: '', message: '' });
+      } else {
+        toast.error(data.error || 'Failed to send message. Please try again.');
+      }
+    } catch (error) {
+      console.error('Contact form error:', error);
+      toast.error('Network error. Please check your connection and try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const contactInfo = [
@@ -31,7 +54,8 @@ const Contact = () => {
         </svg>
       ),
       title: 'Email',
-      value: 'support@ezycv.com',
+      value: 'ezycv22@gmail.com',
+      link: 'mailto:ezycv22@gmail.com',
       color: 'from-blue-500 to-cyan-500'
     },
     {
@@ -42,7 +66,7 @@ const Contact = () => {
         </svg>
       ),
       title: 'Location',
-      value: 'San Francisco, CA',
+      value: 'Rambukkana, Sri Lanka 🇱🇰',
       color: 'from-purple-500 to-pink-500'
     },
     {
@@ -51,8 +75,8 @@ const Contact = () => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
-      title: 'Support Hours',
-      value: 'Mon-Fri, 9AM-6PM PST',
+      title: 'Response Time',
+      value: 'Within 24-48 hours',
       color: 'from-orange-500 to-red-500'
     }
   ];
@@ -103,13 +127,17 @@ const Contact = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="bg-white rounded-2xl p-6 shadow-lg text-center"
+                className="bg-white rounded-2xl p-6 shadow-lg text-center hover:shadow-xl transition-shadow"
               >
                 <div className={`w-14 h-14 bg-gradient-to-br ${info.color} rounded-xl flex items-center justify-center text-white mx-auto mb-4`}>
                   {info.icon}
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-1">{info.title}</h3>
-                <p className="text-gray-600">{info.value}</p>
+                {info.link ? (
+                  <a href={info.link} className="text-purple-600 hover:text-purple-700 font-medium">{info.value}</a>
+                ) : (
+                  <p className="text-gray-600">{info.value}</p>
+                )}
               </motion.div>
             ))}
           </div>

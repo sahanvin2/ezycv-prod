@@ -1,9 +1,48 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStatsStore, useAuthStore } from '../store/store';
 import toast from 'react-hot-toast';
 import { showAdBeforeDownload } from '../utils/adHelper';
+import { 
+  trackView, 
+  trackDownload, 
+  trackLike, 
+  trackSessionStart, 
+  getRecommendedCategoryOrder, 
+  getPersonalizedLabel,
+  updateEngagementStreak,
+  trackInteraction,
+  getEngagementPrompt,
+  getTimeBasedRecommendation
+} from '../utils/userBehavior';
+
+// Fisher-Yates shuffle with seeded random for consistent per-session shuffling
+const seededShuffle = (array, seed) => {
+  const shuffled = [...array];
+  let currentSeed = seed;
+  
+  const seededRandom = () => {
+    const x = Math.sin(currentSeed++) * 10000;
+    return x - Math.floor(x);
+  };
+  
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(seededRandom() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
+// Get or create session seed for consistent shuffling during same session
+const getSessionSeed = () => {
+  let seed = sessionStorage.getItem('wallpaper_shuffle_seed');
+  if (!seed) {
+    seed = Date.now().toString();
+    sessionStorage.setItem('wallpaper_shuffle_seed', seed);
+  }
+  return parseInt(seed);
+};
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
@@ -24,80 +63,88 @@ const Wallpapers = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const ITEMS_PER_PAGE = 24;
+  
+  // Shuffle seed for consistent randomization per session
+  const shuffleSeed = useRef(getSessionSeed());
+  
+  // Get shuffled wallpapers for display - ensures variety on each category visit
+  const displayWallpapers = useMemo(() => {
+    if (!wallpapers.length) return [];
+    // Create category-specific seed to ensure different order per category
+    const categorySeed = shuffleSeed.current + selectedCategory.charCodeAt(0) * 1000 + currentPage * 100;
+    return seededShuffle(wallpapers, categorySeed);
+  }, [wallpapers, selectedCategory, currentPage]);
 
   // Related images state
   const [relatedWallpapers, setRelatedWallpapers] = useState([]);
   const [relatedLoading, setRelatedLoading] = useState(false);
+  const [engagementPrompt, setEngagementPrompt] = useState(null);
 
-  // Modern SVG Icons for categories
-  const CategoryIcon = ({ type, className = "w-5 h-5" }) => {
-    const icons = {
-      all: (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-        </svg>
-      ),
-      nature: (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-        </svg>
-      ),
-      abstract: (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-        </svg>
-      ),
-      animals: (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-        </svg>
-      ),
-      architecture: (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-        </svg>
-      ),
-      space: (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-        </svg>
-      ),
-      gaming: (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-        </svg>
-      ),
-      minimalist: (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
-        </svg>
-      ),
-      dark: (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-        </svg>
-      ),
-      gradient: (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-        </svg>
-      )
-    };
-    return icons[type] || icons.all;
+  // Track session on mount and update engagement
+  useEffect(() => {
+    trackSessionStart();
+    updateEngagementStreak();
+    
+    // Show engagement prompt after a short delay
+    const promptTimer = setTimeout(() => {
+      const prompt = getEngagementPrompt();
+      if (prompt) {
+        setEngagementPrompt(prompt);
+      }
+    }, 5000);
+    
+    // Track time-based interaction
+    trackInteraction('page_visit');
+    
+    return () => clearTimeout(promptTimer);
+  }, []);
+  
+  // Refresh shuffle - gives users fresh content order
+  const refreshShuffle = () => {
+    const newSeed = Date.now().toString();
+    sessionStorage.setItem('wallpaper_shuffle_seed', newSeed);
+    shuffleSeed.current = parseInt(newSeed);
+    // Force re-render by triggering a state change
+    setCurrentPage(prev => prev);
+    toast.success('Fresh order! Enjoy discovering!', { icon: '🔄' });
   };
 
-  const categories = [
+  // Category emoji icons — vibrant and instantly recognizable
+  const categoryIcons = {
+    all: '🎨',
+    nature: '🌿',
+    abstract: '🔮',
+    animals: '🦋',
+    architecture: '🏛️',
+    space: '🚀',
+    gaming: '🎮',
+    minimalist: '◻️',
+    dark: '🌙',
+    gradient: '🌈'
+  };
+
+  const defaultCategories = [
     { id: 'all', name: 'All', color: 'from-violet-500 to-purple-600' },
-    { id: 'nature', name: 'Nature', color: 'from-green-500 to-emerald-600' },
-    { id: 'abstract', name: 'Abstract', color: 'from-pink-500 to-rose-600' },
-    { id: 'animals', name: 'Animals', color: 'from-amber-500 to-orange-600' },
-    { id: 'architecture', name: 'Architecture', color: 'from-slate-500 to-gray-600' },
-    { id: 'space', name: 'Space', color: 'from-indigo-500 to-blue-600' },
-    { id: 'gaming', name: 'Gaming', color: 'from-red-500 to-pink-600' },
-    { id: 'minimalist', name: 'Minimalist', color: 'from-gray-400 to-gray-600' },
-    { id: 'dark', name: 'Dark', color: 'from-gray-700 to-gray-900' },
-    { id: 'gradient', name: 'Gradient', color: 'from-cyan-500 to-blue-600' }
+    { id: 'nature', name: 'Nature', color: 'from-emerald-400 to-green-600' },
+    { id: 'abstract', name: 'Abstract', color: 'from-fuchsia-500 to-purple-600' },
+    { id: 'animals', name: 'Animals', color: 'from-amber-400 to-orange-600' },
+    { id: 'architecture', name: 'Architecture', color: 'from-slate-400 to-gray-700' },
+    { id: 'space', name: 'Space', color: 'from-indigo-400 to-blue-700' },
+    { id: 'gaming', name: 'Gaming', color: 'from-red-500 to-rose-600' },
+    { id: 'minimalist', name: 'Minimalist', color: 'from-gray-300 to-gray-500' },
+    { id: 'dark', name: 'Dark', color: 'from-gray-700 to-gray-950' },
+    { id: 'gradient', name: 'Gradient', color: 'from-cyan-400 to-blue-600' }
   ];
+
+  // Personalize category order based on user behavior
+  const categories = useMemo(() => 
+    getRecommendedCategoryOrder(defaultCategories),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [wallpapers.length]
+  );
+
+  // Personalized sort label
+  const sortLabel = useMemo(() => getPersonalizedLabel(), [wallpapers.length]);
 
   const deviceTypes = [
     { id: 'all', name: 'All Devices' },
@@ -114,7 +161,7 @@ const Wallpapers = () => {
       if (selectedDevice !== 'all') params.append('deviceType', selectedDevice);
       params.append('page', page.toString());
       params.append('limit', ITEMS_PER_PAGE.toString());
-      params.append('sort', 'random');
+      params.append('sort', 'trending');
       
       const response = await fetch(`${API_URL}/api/wallpapers?${params}`);
       
@@ -169,10 +216,11 @@ const Wallpapers = () => {
     setCurrentPage(1);
   };
 
-  // Open modal + fetch related
+  // Open modal + fetch related + track view
   const openWallpaperModal = (wallpaper) => {
     setSelectedWallpaper(wallpaper);
     fetchRelatedWallpapers(wallpaper._id);
+    trackView(wallpaper);
   };
 
   // Switch to a related wallpaper in modal
@@ -308,6 +356,7 @@ const Wallpapers = () => {
       
       toast.dismiss('download-' + wallpaper._id);
       toast.success('Downloaded successfully!', { icon: '⬇️' });
+      trackDownload(wallpaper);
     } catch (error) {
       console.error('Download failed:', error);
       toast.dismiss('download-' + wallpaper._id);
@@ -345,6 +394,7 @@ const Wallpapers = () => {
           w._id === wallpaper._id ? { ...w, likes: (w.likes || 0) + 1 } : w
         ));
         toast.success('Added to favorites!', { icon: '❤️' });
+        trackLike(wallpaper);
       }
     } catch (error) {
       console.error('Like failed:', error);
@@ -428,49 +478,70 @@ const Wallpapers = () => {
                 className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-full whitespace-nowrap transition-all text-xs md:text-sm ${
                   selectedCategory === cat.id
                     ? `bg-gradient-to-r ${cat.color} text-white shadow-lg shadow-purple-500/25`
-                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-gray-300 hover:shadow-sm'
                 }`}
               >
-                <span className={selectedCategory === cat.id ? 'text-white' : 'text-gray-500'}>
-                  <CategoryIcon type={cat.id} className="w-4 h-4" />
-                </span>
+                <span className="text-base">{categoryIcons[cat.id] || '🎨'}</span>
                 <span className="text-sm font-medium">{cat.name}</span>
               </motion.button>
             ))}
           </div>
 
-          {/* Device Types + Shuffle */}
+          {/* Device Types */}
           <div className="flex items-center justify-between">
             <div className="flex gap-2">
               {deviceTypes.map((device) => (
                 <button
                   key={device.id}
                   onClick={() => handleDeviceChange(device.id)}
-                  className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-all ${
+                  className={`flex items-center gap-1.5 px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-all ${
                     selectedDevice === device.id
-                      ? 'bg-gray-900 text-white'
+                      ? 'bg-gray-900 text-white shadow-md'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
+                  <span>{device.id === 'all' ? '📱💻' : device.id === 'desktop' ? '💻' : '📱'}</span>
                   {device.name}
                 </button>
               ))}
             </div>
+            
+            {/* Shuffle button */}
             <motion.button
-              whileHover={{ rotate: 180 }}
-              transition={{ duration: 0.4 }}
-              onClick={() => { setCurrentPage(1); fetchWallpapers(1); }}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-all"
-              title="Shuffle wallpapers"
+              onClick={refreshShuffle}
+              whileHover={{ scale: 1.05, rotate: 180 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex items-center gap-1.5 px-3 py-1.5 md:py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg text-xs md:text-sm font-medium shadow-md hover:shadow-lg transition-all"
+              title="Shuffle for fresh content"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
-              Shuffle
+              <span className="hidden sm:inline">Shuffle</span>
             </motion.button>
           </div>
         </div>
       </div>
+
+      {/* Engagement Prompt Banner */}
+      <AnimatePresence>
+        {engagementPrompt && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="bg-gradient-to-r from-purple-600 to-pink-500 text-white text-center py-2 px-4 text-sm"
+          >
+            <span>{engagementPrompt.message}</span>
+            <button 
+              onClick={() => setEngagementPrompt(null)} 
+              className="ml-3 text-white/70 hover:text-white"
+            >
+              ✕
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Masonry Grid - Pinterest Style */}
       <div className="max-w-7xl mx-auto px-4 py-4 md:py-8">
@@ -480,11 +551,11 @@ const Wallpapers = () => {
             <p className="text-gray-600 text-xs md:text-sm">
               Showing <span className="font-semibold text-gray-900">{((currentPage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, totalCount)}</span> of <span className="font-semibold text-gray-900">{totalCount.toLocaleString()}</span> wallpapers
             </p>
-            <div className="flex items-center gap-2 text-xs md:text-sm text-gray-500">
+            <div className="flex items-center gap-2 text-xs md:text-sm text-purple-600 font-medium">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
               </svg>
-              Shuffled randomly
+              {sortLabel}
             </div>
           </div>
         )}
@@ -499,7 +570,7 @@ const Wallpapers = () => {
               ></div>
             ))}
           </div>
-        ) : wallpapers.length === 0 ? (
+        ) : displayWallpapers.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-6xl mb-4">🖼️</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">No wallpapers found</h3>
@@ -507,7 +578,7 @@ const Wallpapers = () => {
           </div>
         ) : (
           <div className="columns-2 md:columns-3 lg:columns-4 gap-3 md:gap-4 space-y-3 md:space-y-4">
-            {wallpapers.map((wallpaper, index) => (
+            {displayWallpapers.map((wallpaper, index) => (
               <motion.div
                 key={wallpaper._id || wallpaper.id}
                 initial={{ opacity: 0, y: 20 }}

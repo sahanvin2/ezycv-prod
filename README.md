@@ -233,6 +233,26 @@ npm run build
 
 ---
 
+## 🚀 Deployment
+
+### Quick Deploy Options
+
+#### 1. DigitalOcean Droplet (Recommended)
+Complete step-by-step guide with MongoDB Atlas, PM2, Nginx, SSL, and VS Code remote development.
+
+👉 **[Full DigitalOcean Deployment Guide](./DIGITALOCEAN_DEPLOYMENT.md)**
+
+#### 2. Other Platforms
+- **Netlify + Heroku**: See [DEPLOYMENT.md](./DEPLOYMENT.md)
+- **AWS**: See [AWS_DEPLOYMENT_GUIDE.md](./AWS_DEPLOYMENT_GUIDE.md)
+
+#### Quick Reference
+- **[Quick Deployment Commands](./QUICK_REFERENCE.md)** - Essential commands and troubleshooting
+- **Deploy Helper Script**: `./deploy-helper.sh` (run on server after git pull)
+- **PM2 Ecosystem**: `ecosystem.config.js` for advanced deployments
+
+---
+
 ## Environment Variables
 
 ### Backend (.env)

@@ -6,6 +6,97 @@ const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 const { sendWelcomeEmail, sendPasswordResetEmail } = require('../utils/emailService');
+const { verifyIdToken, initializeFirebase } = require('../utils/firebase');
+
+// Initialize Firebase Admin on load
+initializeFirebase();
+
+// @route   POST /api/auth/firebase-login
+// @desc    Login/Register via Firebase (Google, Facebook, Phone, Email)
+// @access  Public
+router.post('/firebase-login', async (req, res) => {
+  try {
+    const { idToken } = req.body;
+    
+    if (!idToken) {
+      return res.status(400).json({ message: 'Firebase ID token is required' });
+    }
+
+    // Verify the Firebase token
+    const decodedToken = await verifyIdToken(idToken);
+    const { uid, email, name, picture, phone_number, firebase } = decodedToken;
+    
+    // Determine auth provider
+    const signInProvider = firebase?.sign_in_provider || 'unknown';
+    let authProvider = 'local';
+    if (signInProvider === 'google.com') authProvider = 'google';
+    else if (signInProvider === 'facebook.com') authProvider = 'facebook';
+    else if (signInProvider === 'phone') authProvider = 'phone';
+
+    // Try to find user by Firebase UID first, then by email
+    let user = await User.findOne({ firebaseUid: uid });
+    let isNewUser = false;
+    
+    if (!user && email) {
+      user = await User.findOne({ email });
+    }
+
+    if (!user) {
+      // Create new user
+      isNewUser = true;
+      user = new User({
+        name: name || decodedToken.display_name || email?.split('@')[0] || `User_${uid.substring(0, 6)}`,
+        email: email || `${uid}@firebase.user`,
+        firebaseUid: uid,
+        authProvider,
+        avatar: picture || '',
+        phoneNumber: phone_number || '',
+        emailVerified: decodedToken.email_verified || false
+      });
+      await user.save();
+
+      // Send welcome email for new users (non-blocking)
+      if (email) {
+        sendWelcomeEmail({ name: user.name, email }).catch(err => {
+          console.log('Welcome email failed:', err.message);
+        });
+      }
+    } else {
+      // Update existing user with Firebase info
+      user.firebaseUid = uid;
+      if (!user.authProvider || user.authProvider === 'local') {
+        user.authProvider = authProvider;
+      }
+      if (picture && !user.avatar) user.avatar = picture;
+      if (phone_number && !user.phoneNumber) user.phoneNumber = phone_number;
+      if (decodedToken.email_verified) user.emailVerified = true;
+      user.lastLogin = new Date();
+      await user.save();
+    }
+
+    // Generate JWT token for our API
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar,
+        authProvider: user.authProvider
+      },
+      isNewUser
+    });
+  } catch (error) {
+    console.error('Firebase login error:', error.message);
+    res.status(401).json({ message: 'Authentication failed: ' + error.message });
+  }
+});
 
 // @route   POST /api/auth/register
 // @desc    Register a new user

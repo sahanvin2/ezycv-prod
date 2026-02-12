@@ -7,8 +7,8 @@ const compression = require('compression');
 const { checkConnection: checkB2Connection } = require('./utils/b2Storage');
 const { verifyConnection: verifyEmailConnection } = require('./utils/emailService');
 
-// Load environment variables
-dotenv.config();
+// Load environment variables from correct path
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 
@@ -192,11 +192,104 @@ app.post('/api/email/test', async (req, res) => {
     const result = await sendEmail({
       to,
       subject,
-      html: `<p>${message || 'Test email from Movia'}</p>`
+      html: `<p>${message || 'Test email from Ezy CV'}</p>`
     });
     
     res.json(result);
   } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Contact form endpoint - sends message to ezycv22@gmail.com
+app.post('/api/contact', async (req, res) => {
+  try {
+    const { sendContactFormEmail, sendContactConfirmationEmail } = require('./utils/emailService');
+    const { name, email, subject, message } = req.body;
+    
+    // Validate input
+    if (!name || !email || !subject || !message) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'All fields are required (name, email, subject, message)' 
+      });
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Please provide a valid email address' 
+      });
+    }
+    
+    // Send email to support (ezycv22@gmail.com)
+    const supportResult = await sendContactFormEmail({ name, email, subject, message });
+    
+    if (!supportResult.success) {
+      console.error('Failed to send contact form email:', supportResult.error);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Failed to send message. Please try again later.' 
+      });
+    }
+    
+    // Send confirmation to user (non-blocking)
+    sendContactConfirmationEmail({ name, email, subject }).catch(err => {
+      console.log('Confirmation email failed:', err.message);
+    });
+    
+    res.json({ 
+      success: true, 
+      message: 'Your message has been sent successfully! We\'ll get back to you soon.' 
+    });
+  } catch (error) {
+    console.error('Contact form error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Newsletter subscription endpoint
+app.post('/api/newsletter/subscribe', async (req, res) => {
+  try {
+    const { sendNewsletterSubscriptionEmail } = require('./utils/emailService');
+    const { email } = req.body;
+    
+    // Validate email
+    if (!email) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Email is required' 
+      });
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Please provide a valid email address' 
+      });
+    }
+    
+    // Send welcome email
+    const result = await sendNewsletterSubscriptionEmail(email);
+    
+    if (!result.success) {
+      console.error('Failed to send newsletter subscription email:', result.error);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Failed to subscribe. Please try again later.' 
+      });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Thanks for subscribing! Check your email for a welcome message 🎉' 
+    });
+  } catch (error) {
+    console.error('Newsletter subscription error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

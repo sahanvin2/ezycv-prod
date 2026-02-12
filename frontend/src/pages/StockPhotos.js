@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LargeBannerAd, NativeBannerAd, MediumBannerAd } from '../components/Ads/AdComponents';
 import { useStatsStore, useAuthStore } from '../store/store';
 import toast from 'react-hot-toast';
 import { showAdBeforeDownload } from '../utils/adHelper';
+import { trackView, trackDownload, trackLike, trackSearch, trackSessionStart, getRecommendedCategoryOrder } from '../utils/userBehavior';
 
 const StockPhotos = () => {
   const { incrementDownloads, incrementStockPhotos } = useStatsStore();
@@ -18,77 +19,44 @@ const StockPhotos = () => {
   const [likedPhotos, setLikedPhotos] = useState(new Set());
   const [downloadingId, setDownloadingId] = useState(null);
 
-  // Modern SVG Icons for categories
-  const CategoryIcon = ({ type, className = "w-5 h-5" }) => {
-    const icons = {
-      all: (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-        </svg>
-      ),
-      business: (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-        </svg>
-      ),
-      technology: (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-        </svg>
-      ),
-      people: (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-        </svg>
-      ),
-      nature: (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-        </svg>
-      ),
-      food: (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      travel: (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      fashion: (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-        </svg>
-      ),
-      health: (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-        </svg>
-      ),
-      education: (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 14l9-5-9-5-9 5 9 5z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" />
-        </svg>
-      )
-    };
-    return icons[type] || icons.all;
+  // Track session on mount
+  useEffect(() => {
+    trackSessionStart();
+  }, []);
+
+  // Category emoji icons — vibrant and recognizable
+  const categoryIcons = {
+    all: '🎨',
+    business: '💼',
+    technology: '💻',
+    people: '👥',
+    nature: '🌿',
+    food: '🍽️',
+    travel: '✈️',
+    fashion: '👗',
+    health: '❤️',
+    education: '🎓'
   };
 
-  const categories = [
+  const defaultCategories = [
     { id: 'all', name: 'All', color: 'from-cyan-500 to-blue-600' },
     { id: 'business', name: 'Business', color: 'from-blue-500 to-indigo-600' },
     { id: 'technology', name: 'Technology', color: 'from-violet-500 to-purple-600' },
-    { id: 'people', name: 'People', color: 'from-pink-500 to-rose-600' },
-    { id: 'nature', name: 'Nature', color: 'from-green-500 to-emerald-600' },
-    { id: 'food', name: 'Food', color: 'from-orange-500 to-red-600' },
-    { id: 'travel', name: 'Travel', color: 'from-sky-500 to-blue-600' },
-    { id: 'fashion', name: 'Fashion', color: 'from-fuchsia-500 to-pink-600' },
-    { id: 'health', name: 'Health', color: 'from-red-500 to-rose-600' },
-    { id: 'education', name: 'Education', color: 'from-amber-500 to-orange-600' }
+    { id: 'people', name: 'People', color: 'from-pink-400 to-rose-600' },
+    { id: 'nature', name: 'Nature', color: 'from-emerald-400 to-green-600' },
+    { id: 'food', name: 'Food & Drink', color: 'from-orange-400 to-red-500' },
+    { id: 'travel', name: 'Travel', color: 'from-sky-400 to-blue-600' },
+    { id: 'fashion', name: 'Fashion', color: 'from-fuchsia-400 to-pink-600' },
+    { id: 'health', name: 'Health', color: 'from-red-400 to-rose-600' },
+    { id: 'education', name: 'Education', color: 'from-amber-400 to-orange-600' }
   ];
+
+  // Personalize category order based on user behavior
+  const categories = useMemo(() => 
+    getRecommendedCategoryOrder(defaultCategories),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [photos.length]
+  );
 
   // Fetch photos from API
   const fetchPhotos = async () => {
@@ -217,6 +185,7 @@ const StockPhotos = () => {
       
       toast.dismiss('download-' + photo._id);
       toast.success('Downloaded successfully!', { icon: '⬇️' });
+      trackDownload(photo);
       setSelectedPhoto(null);
     } catch (error) {
       console.error('Download failed:', error);
@@ -253,6 +222,7 @@ const StockPhotos = () => {
           p._id === photo._id ? { ...p, likes: (p.likes || 0) + 1 } : p
         ));
         toast.success('Added to favorites!', { icon: '❤️' });
+        trackLike(photo);
       }
     } catch (error) {
       console.error('Like failed:', error);
@@ -323,7 +293,10 @@ const StockPhotos = () => {
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    if (e.target.value.length > 2) trackSearch(e.target.value);
+                  }}
                   placeholder="Search for photos..."
                   className="w-full px-6 py-4 rounded-xl text-gray-900 focus:outline-none focus:ring-4 focus:ring-white/30 shadow-lg"
                 />
@@ -358,12 +331,10 @@ const StockPhotos = () => {
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-full whitespace-nowrap transition-all ${
                   selectedCategory === cat.id
                     ? `bg-gradient-to-r ${cat.color} text-white shadow-lg shadow-cyan-500/25`
-                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-gray-300 hover:shadow-sm'
                 }`}
               >
-                <span className={selectedCategory === cat.id ? 'text-white' : 'text-gray-500'}>
-                  <CategoryIcon type={cat.id} className="w-4 h-4" />
-                </span>
+                <span className="text-base">{categoryIcons[cat.id] || '🎨'}</span>
                 <span className="text-sm font-medium">{cat.name}</span>
               </motion.button>
             ))}
@@ -397,7 +368,7 @@ const StockPhotos = () => {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: index * 0.05 }}
                     className="group relative rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer bg-white"
-                    onClick={() => setSelectedPhoto(photo)}
+                    onClick={() => { setSelectedPhoto(photo); trackView(photo); }}
                   >
                     <div className="aspect-[4/3]">
                       <img

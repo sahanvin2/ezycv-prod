@@ -1,0 +1,141 @@
+/* Print-specific styles for high-quality PDF generation */
+
+@media print {
+  /* Hide everything except the CV */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Show only the CV preview */
+  [data-cv-print="true"],
+  [data-cv-print="true"] * {
+    visibility: visible !important;
+  }
+
+  /* Position CV at top-left for print */
+  [data-cv-print="true"] {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 210mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: white !important;
+    transform: scale(1) !important;
+    transform-origin: top left !important;
+  }
+
+  /* Scale the inner CV content to fit A4 width and compress to 2 pages */
+  [data-cv-print="true"] > div {
+    width: 595px !important;
+    max-height: 1684px !important; /* 2 pages A4 (842px per page * 2) */
+    transform: scale(1.334) !important; /* 794px (A4 @ 96dpi) / 595px = 1.334 */
+    transform-origin: top left !important;
+    font-size: 9.5px !important; /* Slightly smaller base font */
+  }
+
+  /* Compress spacing for 2-page fit */
+  [data-cv-print="true"] h1 {
+    font-size: 24px !important;
+    margin-bottom: 3px !important;
+  }
+
+  [data-cv-print="true"] h2 {
+    font-size: 12px !important;
+    margin-bottom: 7px !important;
+  }
+
+  [data-cv-print="true"] h3 {
+    font-size: 11px !important;
+    margin-bottom: 2px !important;
+  }
+
+  [data-cv-print="true"] p {
+    font-size: 9.5px !important;
+    margin-bottom: 3px !important;
+    line-height: 1.35 !important;
+  }
+
+  /* Compress section spacing */
+  [data-cv-print="true"] section,
+  [data-cv-print="true"] [style*="marginBottom"] {
+    margin-bottom: 10px !important;
+  }
+
+  /* Compress list items */
+  [data-cv-print="true"] li {
+    margin-bottom: 2px !important;
+    line-height: 1.35 !important;
+  }
+
+  /* Reduce header padding */
+  [data-cv-print="true"] [style*="padding: '24px'"],
+  [data-cv-print="true"] [style*="padding:'24px'"] {
+    padding: 18px !important;
+  }
+
+  /* Reduce content padding */
+  [data-cv-print="true"] [style*="padding: '20px 24px'"],
+  [data-cv-print="true"] [style*="padding:'20px 24px'"] {
+    padding: 14px 18px !important;
+  }
+
+  /* Remove all page margins */
+  @page {
+    margin: 0;
+    size: A4 portrait;
+  }
+
+  /* Ensure proper page breaks */
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Prevent page breaks inside important elements */
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  /* Optimize image printing */
+  img {
+    max-width: 100% !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    image-rendering: high-quality !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Preserve background colors and images */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Optimize text rendering */
+  body, div, p, span, h1, h2, h3, h4, h5, h6 {
+    text-rendering: optimizeLegibility !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+  }
+
+  /* Hide any UI elements */
+  button, .no-print, [class*="navbar"], [class*="header"], [class*="footer"] {
+    display: none !important;
+  }
+}
+
+/* Non-print: hide the print-optimized preview */
+@media screen {
+  [data-cv-print="true"] {
+    position: absolute;
+    left: -9999px;
+    pointer-events: none;
+  }
+}

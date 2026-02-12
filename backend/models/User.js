@@ -16,12 +16,27 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true,
     minlength: 6
+    // Not required - social login users won't have a password
   },
   avatar: {
     type: String,
     default: ''
+  },
+  // Firebase / Social Auth fields
+  firebaseUid: {
+    type: String,
+    unique: true,
+    sparse: true // allows null values without unique constraint conflict
+  },
+  authProvider: {
+    type: String,
+    enum: ['local', 'google', 'facebook', 'phone'],
+    default: 'local'
+  },
+  phoneNumber: {
+    type: String,
+    sparse: true
   },
   cvs: [{
     type: mongoose.Schema.Types.ObjectId,
@@ -57,15 +72,16 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-// Hash password before saving
+// Hash password before saving (only for local auth users)
 userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
+  if (!this.isModified('password') || !this.password) return next();
   this.password = await bcrypt.hash(this.password, 12);
   next();
 });
 
 // Compare password method
 userSchema.methods.comparePassword = async function(candidatePassword) {
+  if (!this.password) return false;
   return await bcrypt.compare(candidatePassword, this.password);
 };
 

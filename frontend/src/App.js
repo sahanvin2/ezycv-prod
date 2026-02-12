@@ -27,6 +27,8 @@ const CookiePolicy = lazy(() => import('./pages/CookiePolicy'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const EditProfile = lazy(() => import('./pages/EditProfile'));
 const Settings = lazy(() => import('./pages/Settings'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const PhoneLogin = lazy(() => import('./pages/PhoneLogin'));
 
 // Loading fallback component - Fast and attractive
 const PageLoader = () => (
@@ -82,6 +84,8 @@ function App() {
                 <Route path="/stock-photos/:category" element={<StockPhotos />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/phone-login" element={<PhoneLogin />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/upload" element={<Upload />} />
                 <Route path="/about" element={<AboutUs />} />

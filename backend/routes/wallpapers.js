@@ -33,7 +33,7 @@ router.get('/', async (req, res) => {
       featured,
       page = 1, 
       limit = 24,
-      sort = 'random'
+      sort = 'trending'
     } = req.query;
 
     const query = {};
@@ -51,23 +51,57 @@ router.get('/', async (req, res) => {
 
     let wallpapers;
 
-    if (sort === 'random') {
-      // Use MongoDB $sample for true random shuffle
-      // Build an aggregation pipeline with match + sample + skip logic
+    if (sort === 'trending') {
+      // Trending: weighted score combining downloads, likes, views, recency
       const pipeline = [];
       if (Object.keys(query).length > 0) {
         pipeline.push({ $match: query });
       }
       
-      // For random pagination, use a seed-based approach
-      // On page 1 we sample; for consistency across pages we use a hash
-      // Simple approach: get all IDs shuffled, then paginate from that
+      // Calculate trending score: recent downloads weigh most, then likes, then views
+      // Recency boost: newer wallpapers get priority
+      pipeline.push({
+        $addFields: {
+          _trendingScore: {
+            $add: [
+              { $multiply: [{ $ifNull: ['$downloads', 0] }, 5] },
+              { $multiply: [{ $ifNull: ['$likes', 0] }, 3] },
+              { $multiply: [{ $ifNull: ['$views', 0] }, 0.1] },
+              // Recency boost: items added in last 30 days get a bonus
+              {
+                $cond: {
+                  if: {
+                    $gte: [
+                      '$createdAt',
+                      { $subtract: [new Date(), 30 * 24 * 60 * 60 * 1000] }
+                    ]
+                  },
+                  then: 50,
+                  else: 0
+                }
+              },
+              // Add slight randomness for variety (0-10)
+              { $mod: [{ $toLong: { $toDate: '$_id' } }, 10] }
+            ]
+          }
+        }
+      });
+      
+      pipeline.push({ $sort: { _trendingScore: -1, _id: -1 } });
+      pipeline.push({ $skip: (pageNum - 1) * limitNum });
+      pipeline.push({ $limit: limitNum });
+      pipeline.push({ $project: { _trendingScore: 0 } });
+      wallpapers = await Wallpaper.aggregate(pipeline);
+    } else if (sort === 'random') {
+      const pipeline = [];
+      if (Object.keys(query).length > 0) {
+        pipeline.push({ $match: query });
+      }
+      
       if (pageNum === 1 && !search) {
         pipeline.push({ $sample: { size: limitNum } });
         wallpapers = await Wallpaper.aggregate(pipeline);
       } else {
-        // For subsequent pages or search, fall back to a pseudo-random sort
-        // Sort by a hash of _id to get consistent shuffled ordering
         pipeline.push({ $addFields: { _rand: { $mod: [{ $toLong: { $toDate: '$_id' } }, 97] } } });
         pipeline.push({ $sort: { _rand: 1, _id: 1 } });
         pipeline.push({ $skip: (pageNum - 1) * limitNum });
@@ -75,6 +109,19 @@ router.get('/', async (req, res) => {
         pipeline.push({ $project: { _rand: 0 } });
         wallpapers = await Wallpaper.aggregate(pipeline);
       }
+    } else if (sort === 'popular') {
+      // Sort by all-time popularity
+      const skip = (pageNum - 1) * limitNum;
+      wallpapers = await Wallpaper.find(query)
+        .sort({ downloads: -1, likes: -1, views: -1 })
+        .skip(skip)
+        .limit(limitNum);
+    } else if (sort === 'newest') {
+      const skip = (pageNum - 1) * limitNum;
+      wallpapers = await Wallpaper.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum);
     } else {
       const skip = (pageNum - 1) * limitNum;
       wallpapers = await Wallpaper.find(query)
