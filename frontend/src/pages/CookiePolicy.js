@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 const CookiePolicy = () => {
-  const lastUpdated = 'January 29, 2026';
+  const lastUpdated = 'February 16, 2026';
   const [cookiePreferences, setCookiePreferences] = useState({
     necessary: true,
     functional: true,
@@ -20,21 +20,21 @@ const CookiePolicy = () => {
     {
       id: 'necessary',
       name: 'Necessary Cookies',
-      description: 'These cookies are essential for the website to function properly. They enable basic functions like page navigation, secure areas access, and remembering your preferences. The website cannot function properly without these cookies.',
+      description: 'These cookies are essential for the website to function properly. They enable basic functions like page navigation, secure areas access, and remembering your preferences. The website cannot function properly without these cookies. These are always enabled as permitted under the PDPA.',
       required: true,
       examples: ['Session management', 'Security tokens', 'Load balancing']
     },
     {
       id: 'functional',
       name: 'Functional Cookies',
-      description: 'These cookies enable enhanced functionality and personalization, such as remembering your CV data, template preferences, and settings. If you disable these cookies, some features may not work correctly.',
+      description: 'These cookies enable enhanced functionality and personalisation, such as remembering your CV data, template preferences, and settings. If you disable these cookies, some features may not work correctly.',
       required: false,
       examples: ['Language preferences', 'CV data storage', 'Theme settings']
     },
     {
       id: 'analytics',
       name: 'Analytics Cookies',
-      description: 'These cookies help us understand how visitors interact with our website by collecting and reporting information anonymously. This helps us improve our services and user experience.',
+      description: 'These cookies help us understand how visitors interact with our website by collecting and reporting information anonymously. This helps us improve our services and user experience. You can opt out at any time.',
       required: false,
       examples: ['Google Analytics', 'Page views tracking', 'Feature usage statistics']
     },
@@ -53,28 +53,30 @@ const CookiePolicy = () => {
       content: `Cookies are small text files that are stored on your computer or mobile device when you visit a website. They are widely used to make websites work more efficiently and provide information to website owners.
 
 Cookies can be "persistent" or "session" cookies:
-• **Persistent cookies** remain on your device for a set period or until you delete them
-• **Session cookies** are temporary and deleted when you close your browser`
+• Persistent cookies remain on your device for a set period or until you delete them
+• Session cookies are temporary and deleted when you close your browser`
     },
     {
       title: 'How We Use Cookies',
       content: `Ezy CV uses cookies for several purposes:
 
-• **Essential Operations:** To make our website work correctly
-• **Remembering Preferences:** To save your settings and CV data locally
-• **Security:** To protect your account and prevent fraud
-• **Analytics:** To understand how visitors use our site (with your consent)
-• **Improvement:** To test new features and improve user experience`
+• Essential Operations: To make our website work correctly
+• Remembering Preferences: To save your settings and CV data locally
+• Security: To protect your account and prevent fraudulent activity
+• Analytics: To understand how visitors use our site (with your explicit consent)
+• Improvement: To test new features and improve user experience
+
+Under Sri Lanka's Personal Data Protection Act (PDPA), we obtain your informed consent before placing non-essential cookies on your device.`
     },
     {
       title: 'Third-Party Cookies',
       content: `Some cookies on our site are placed by third-party services. These may include:
 
-• **Analytics providers** (e.g., Google Analytics)
-• **Social media platforms** (when you share content)
-• **Payment processors** (for premium features, if any)
+• Analytics providers (e.g., Google Analytics) — used to understand site usage
+• Social media platforms (when you share content)
+• Cloud storage services (Backblaze B2 for CV backup)
 
-We do not control these third-party cookies. Please refer to their respective privacy policies for more information.`
+We ensure all third-party services comply with data protection standards consistent with the PDPA. Please refer to their respective privacy policies for more information.`
     },
     {
       title: 'Local Storage',
@@ -88,33 +90,48 @@ You can clear local storage through your browser settings, but this will delete 
     },
     {
       title: 'Managing Cookies',
-      content: `You can control and manage cookies in several ways:
+      content: `You have full control over cookies. You can manage them in several ways:
 
-**Browser Settings:** Most browsers allow you to refuse or delete cookies through settings. Note that disabling cookies may affect website functionality.
+Browser Settings: Most browsers allow you to refuse or delete cookies through settings. Note that disabling cookies may affect website functionality.
 
-**Our Preference Center:** Use the controls above to manage which cookies we use.
+Our Preference Centre: Use the controls above to manage which cookies we use.
 
-**Do Not Track:** We respect "Do Not Track" browser signals where technically feasible.`
+Do Not Track: We respect "Do Not Track" browser signals where technically feasible.
+
+Under the PDPA, you have the right to withdraw your consent to non-essential cookies at any time.`
     },
     {
       title: 'Cookie Retention',
       content: `Different cookies are retained for different periods:
 
-• **Session cookies:** Deleted when you close your browser
-• **Preference cookies:** Retained for up to 1 year
-• **Analytics cookies:** Retained for up to 2 years
-• **Local storage data:** Retained until manually cleared`
+• Session cookies: Deleted when you close your browser
+• Preference cookies: Retained for up to 1 year
+• Analytics cookies: Retained for up to 2 years
+• Local storage data: Retained until manually cleared
+
+We review cookie retention periods regularly to ensure we do not retain data longer than necessary.`
+    },
+    {
+      title: 'Your Rights',
+      content: `Under the Personal Data Protection Act No. 9 of 2022 of Sri Lanka, you have the right to:
+
+• Know what cookies we use and why
+• Consent to or refuse non-essential cookies
+• Withdraw consent at any time through our Cookie Preference Centre
+• Request deletion of cookie-related data by contacting us
+• Access information about the data collected via cookies`
     },
     {
       title: 'Updates to This Policy',
-      content: `We may update this Cookie Policy from time to time to reflect changes in our practices or for legal, operational, or regulatory reasons. We will notify you of any material changes by updating the "Last Updated" date.`
+      content: `We may update this Cookie Policy from time to time to reflect changes in our practices, technology, or legal requirements under the PDPA. We will notify you of any material changes by updating the "Last Updated" date.`
     },
     {
       title: 'Contact Us',
       content: `If you have questions about our use of cookies, please contact us:
 
-**Email:** privacy@ezycv.com
-**Address:** Ezy CV, San Francisco, CA, USA`
+Email: privacy@ezycv.com
+Website: https://ezycv.org
+Regulatory Body: Data Protection Authority of Sri Lanka`
     }
   ];
 

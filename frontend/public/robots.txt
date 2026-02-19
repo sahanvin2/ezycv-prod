@@ -4,7 +4,7 @@ Allow: /
 Disallow: /dashboard
 
 # Sitemap
-Sitemap: https://cvmaker-pro.com/sitemap.xml
+Sitemap: https://ezycv.org/sitemap.xml
 
 # Crawl-delay
 Crawl-delay: 1

@@ -2,17 +2,16 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCVStore, useStatsStore } from '../store/store';
-import { LargeBannerAd, NativeBannerAd, InterstitialAd } from '../components/Ads/AdComponents';
 import CVPreview from '../components/CVPreview';
 import KeywordSuggestions from '../components/KeywordSuggestions';
 import toast from 'react-hot-toast';
-import { showAdBeforeDownload } from '../utils/adHelper';
+import { cvAPI } from '../services/api';
+import { triggerSupportPopup } from '../components/SupportPopup';
 
 const CVBuilder = () => {
   const cvStore = useCVStore();
   const { currentCV, currentStep, setCurrentStep, setTemplate } = cvStore;
   const { incrementCVs, incrementDownloads, trackTemplateUsed } = useStatsStore();
-  const [showInterstitial, setShowInterstitial] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPreparingPDF, setIsPreparingPDF] = useState(false);
   const cvPreviewRef = useRef(null);
@@ -58,10 +57,7 @@ const CVBuilder = () => {
       setCurrentStep(1);
       return;
     }
-    // Show ad before proceeding with CV generation
-    showAdBeforeDownload(() => {
-      setShowInterstitial(true);
-    }, 'cv');
+    generatePDF();
   };
 
   const generatePDF = async () => {
@@ -88,8 +84,22 @@ const CVBuilder = () => {
       // Update live stats
       incrementCVs();
       incrementDownloads();
+
+      // Backup CV to cloud storage (non-blocking)
+      try {
+        const sessionId = localStorage.getItem('cvSessionId') || `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        localStorage.setItem('cvSessionId', sessionId);
+        cvAPI.backupToCloud(currentCV, sessionId).then(() => {
+          console.log('CV backed up to cloud');
+        }).catch(() => {
+          // Silent fail - backup is optional
+        });
+      } catch (e) {
+        // Silent fail
+      }
       
       toast.success('Print dialog opened! Choose "Save as PDF" to download.');
+      triggerSupportPopup();
     } catch (error) {
       console.error('Error opening print dialog:', error);
       toast.error('Failed to open print dialog. Please try again.');
@@ -212,6 +222,17 @@ const CVBuilder = () => {
               {currentStep === 6 ? '🎉 Ready to download!' : `${6 - currentStep} step${6 - currentStep !== 1 ? 's' : ''} remaining`}
             </span>
           </div>
+
+          {/* Data Storage Info Banner */}
+          <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-100 rounded-lg text-xs text-blue-700">
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>
+              Your CV data is stored locally on your device and securely backed up to our cloud storage when you download. 
+              <a href="/privacy-policy" className="underline font-medium ml-1 hover:text-blue-800">Learn more</a>
+            </span>
+          </div>
         </div>
       </div>
 
@@ -322,14 +343,6 @@ const CVBuilder = () => {
           )}
         </div>
       </div>
-
-      {/* Interstitial Ad */}
-      <InterstitialAd
-        isOpen={showInterstitial}
-        onClose={() => setShowInterstitial(false)}
-        onContinue={generatePDF}
-        action="generate"
-      />
     </div>
   );
 };

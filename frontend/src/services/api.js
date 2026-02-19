@@ -62,6 +62,8 @@ export const cvAPI = {
   update: (id, data) => api.put(`/cv/${id}`, data),
   delete: (id) => api.delete(`/cv/${id}`),
   getTemplates: () => api.get('/cv/templates/list'),
+  getLiveStats: () => api.get('/cv/stats/live'),
+  backupToCloud: (cvData, sessionId) => api.post('/cv/backup', { cvData, sessionId }),
 };
 
 // Wallpapers API

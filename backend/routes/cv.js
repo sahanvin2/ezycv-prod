@@ -3,6 +3,30 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const CV = require('../models/CV');
 const { auth, optionalAuth } = require('../middleware/auth');
+const { uploadBufferToB2, deleteFromB2, getPublicUrl } = require('../utils/b2Storage');
+
+/**
+ * Save a CV data copy as JSON to B2 cloud storage
+ */
+async function backupCVToB2(cvDoc) {
+  try {
+    if (!process.env.B2_ENDPOINT) return null;
+
+    const cvJson = JSON.stringify(cvDoc.toObject(), null, 2);
+    const buffer = Buffer.from(cvJson, 'utf-8');
+    const key = `cv-backups/${cvDoc._id}.json`;
+
+    const result = await uploadBufferToB2(buffer, key, 'application/json');
+    if (result.success) {
+      console.log(`✅ CV backed up to B2: ${key}`);
+      return result.url;
+    }
+    return null;
+  } catch (err) {
+    console.error('CV B2 backup error:', err.message);
+    return null;
+  }
+}
 
 // @route   POST /api/cv
 // @desc    Create a new CV
@@ -27,6 +51,9 @@ router.post('/', optionalAuth, [
 
     const cv = new CV(cvData);
     await cv.save();
+
+    // Backup CV to B2 cloud storage (non-blocking)
+    backupCVToB2(cv).catch(err => console.error('B2 backup failed:', err.message));
 
     res.status(201).json(cv);
   } catch (error) {
@@ -85,6 +112,9 @@ router.put('/:id', optionalAuth, async (req, res) => {
       { new: true }
     );
 
+    // Backup updated CV to B2 (non-blocking)
+    backupCVToB2(cv).catch(err => console.error('B2 backup failed:', err.message));
+
     res.json(cv);
   } catch (error) {
     console.error(error);
@@ -107,9 +137,77 @@ router.delete('/:id', auth, async (req, res) => {
     }
 
     await cv.deleteOne();
+
+    // Delete B2 backup (non-blocking)
+    if (process.env.B2_ENDPOINT) {
+      deleteFromB2(`cv-backups/${cv._id}.json`).catch(() => {});
+    }
+
     res.json({ message: 'CV deleted' });
   } catch (error) {
     console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/cv/stats/live
+// @desc    Get live CV creation stats from database
+// @access  Public
+router.get('/stats/live', async (req, res) => {
+  try {
+    const totalCVs = await CV.countDocuments();
+    const todayCVs = await CV.countDocuments({
+      createdAt: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) }
+    });
+    const templateStats = await CV.aggregate([
+      { $group: { _id: '$template', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]);
+
+    res.json({
+      totalCVs,
+      todayCVs,
+      templateStats,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/cv/backup
+// @desc    Backup CV data to B2 for guest users (accepts raw CV JSON)
+// @access  Public
+router.post('/backup', async (req, res) => {
+  try {
+    if (!process.env.B2_ENDPOINT) {
+      return res.status(503).json({ message: 'Cloud backup not available' });
+    }
+
+    const { cvData, sessionId } = req.body;
+    if (!cvData) {
+      return res.status(400).json({ message: 'CV data is required' });
+    }
+
+    const backupId = sessionId || `guest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const cvJson = JSON.stringify({ ...cvData, backupId, backedUpAt: new Date().toISOString() }, null, 2);
+    const buffer = Buffer.from(cvJson, 'utf-8');
+    const key = `cv-backups/guest/${backupId}.json`;
+
+    const result = await uploadBufferToB2(buffer, key, 'application/json');
+    if (result.success) {
+      res.json({ 
+        success: true, 
+        backupId, 
+        message: 'CV backed up successfully to cloud storage',
+        url: result.url 
+      });
+    } else {
+      res.status(500).json({ success: false, message: 'Backup failed' });
+    }
+  } catch (error) {
+    console.error('CV backup error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

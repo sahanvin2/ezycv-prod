@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LargeBannerAd, NativeBannerAd, MediumBannerAd } from '../components/Ads/AdComponents';
 import { useStatsStore, useAuthStore } from '../store/store';
 import toast from 'react-hot-toast';
-import { showAdBeforeDownload } from '../utils/adHelper';
+import { triggerSupportPopup } from '../components/SupportPopup';
 import { trackView, trackDownload, trackLike, trackSearch, trackSessionStart, getRecommendedCategoryOrder } from '../utils/userBehavior';
 
 const StockPhotos = () => {
@@ -97,11 +96,8 @@ const StockPhotos = () => {
     if (e) e.stopPropagation();
     
     if (downloadingId === photo._id) return;
-    
-    // Show ad before starting download
-    showAdBeforeDownload(() => {
-      proceedWithDownload(photo);
-    }, 'photo');
+
+    proceedWithDownload(photo);
   };
   
   // Actual download logic
@@ -185,6 +181,7 @@ const StockPhotos = () => {
       
       toast.dismiss('download-' + photo._id);
       toast.success('Downloaded successfully!', { icon: '⬇️' });
+      triggerSupportPopup();
       trackDownload(photo);
       setSelectedPhoto(null);
     } catch (error) {
@@ -270,6 +267,29 @@ const StockPhotos = () => {
     return num;
   };
 
+  // Swipe-down to close modal on mobile
+  const photoTouchStartY = useRef(null);
+  const [photoSwipeDelta, setPhotoSwipeDelta] = useState(0);
+
+  const handlePhotoTouchStart = (e) => {
+    photoTouchStartY.current = e.touches[0].clientY;
+    setPhotoSwipeDelta(0);
+  };
+
+  const handlePhotoTouchMove = (e) => {
+    if (photoTouchStartY.current === null) return;
+    const delta = e.touches[0].clientY - photoTouchStartY.current;
+    if (delta > 0) setPhotoSwipeDelta(delta);
+  };
+
+  const handlePhotoTouchEnd = () => {
+    if (photoSwipeDelta > 80) {
+      setSelectedPhoto(null);
+    }
+    photoTouchStartY.current = null;
+    setPhotoSwipeDelta(0);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -310,13 +330,6 @@ const StockPhotos = () => {
           </motion.div>
         </div>
       </section>
-
-      {/* Ad Banner */}
-      <div className="bg-white py-4 border-b">
-        <div className="max-w-7xl mx-auto px-4 flex justify-center">
-          <LargeBannerAd />
-        </div>
-      </div>
 
       {/* Categories */}
       <div className="bg-white border-b sticky top-16 z-30">
@@ -467,12 +480,7 @@ const StockPhotos = () => {
               </div>
             )}
 
-            {/* Mid-content Ad */}
-            {photos.length > 6 && (
-              <div className="my-8">
-                <NativeBannerAd />
-              </div>
-            )}
+            {/* End of photo grid */}
           </div>
 
           {/* Sidebar */}
@@ -505,10 +513,6 @@ const StockPhotos = () => {
               </a>
             </div>
 
-            {/* Sidebar Ad */}
-            <div className="sticky top-40">
-              <MediumBannerAd />
-            </div>
           </div>
         </div>
       </div>
@@ -529,7 +533,16 @@ const StockPhotos = () => {
               exit={{ scale: 0.9, opacity: 0 }}
               className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
               onClick={(e) => e.stopPropagation()}
+              onTouchStart={handlePhotoTouchStart}
+              onTouchMove={handlePhotoTouchMove}
+              onTouchEnd={handlePhotoTouchEnd}
+              style={photoSwipeDelta > 0 ? { transform: `translateY(${Math.min(photoSwipeDelta * 0.35, 60)}px)`, transition: 'none' } : {}}
             >
+              {/* Swipe-down indicator -- mobile only */}
+              <div className="flex justify-center pt-3 pb-1 md:hidden">
+                <div className="w-10 h-1.5 bg-gray-300 rounded-full"></div>
+              </div>
+              <p className="text-center text-xs text-gray-400 pb-1 md:hidden">Swipe down to close</p>
               {/* Image */}
               <div className="relative bg-gray-100">
                 <img

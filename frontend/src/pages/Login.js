@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import { useAuthStore } from '../store/store';
 import { authAPI } from '../services/api';
 import { signInWithGoogle, signInWithFacebook } from '../services/firebaseAuth';
-import { MediumBannerAd } from '../components/Ads/AdComponents';
 import toast from 'react-hot-toast';
 
 const Login = () => {
@@ -261,10 +260,6 @@ const Login = () => {
             </div>
           </form>
 
-          {/* Ad */}
-          <div className="mt-8">
-            <MediumBannerAd />
-          </div>
         </motion.div>
       </div>
 

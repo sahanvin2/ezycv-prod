@@ -12,7 +12,7 @@ const Home = () => {
   const wallpapersStore = useStatsStore(state => state.stats.wallpapers);
   const stockPhotosStore = useStatsStore(state => state.stats.stockPhotos);
   
-  const [apiStats, setApiStats] = useState({ wallpapers: null, stockPhotos: null });
+  const [apiStats, setApiStats] = useState({ wallpapers: null, stockPhotos: null, cvsCreated: null, totalDownloads: null });
   
   // Fetch real counts from API on mount + periodic refresh
   const fetchRealCounts = useCallback(async () => {
@@ -22,7 +22,9 @@ const Home = () => {
         const data = await res.json();
         setApiStats({
           wallpapers: data.wallpapers || null,
-          stockPhotos: data.stockPhotos || null
+          stockPhotos: data.stockPhotos || null,
+          cvsCreated: data.cvsCreated || null,
+          totalDownloads: data.totalDownloads || null
         });
       }
     } catch (err) {
@@ -37,10 +39,10 @@ const Home = () => {
     return () => clearInterval(interval);
   }, [fetchRealCounts]);
 
-  // Compute final display values — API data takes priority for wallpapers/photos
+  // Compute final display values — API data takes priority
   const displayStats = {
-    cvsCreated,
-    totalDownloads,
+    cvsCreated: apiStats.cvsCreated ?? cvsCreated,
+    totalDownloads: apiStats.totalDownloads ?? totalDownloads,
     wallpapers: apiStats.wallpapers ?? wallpapersStore,
     stockPhotos: apiStats.stockPhotos ?? stockPhotosStore
   };
@@ -901,21 +903,24 @@ const Home = () => {
               {
                 name: 'Michael Rodriguez',
                 role: 'Software Engineer at Tech Corp',
-                avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80',
+                initials: 'MR',
+                color: 'from-blue-500 to-indigo-600',
                 quote: 'Ezy CV helped me create a professional resume in under 10 minutes. I got 3 interview calls in the first week!',
                 rating: 5
               },
               {
                 name: 'Sarah Thompson',
                 role: 'Marketing Manager at StartUp Inc',
-                avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&q=80',
+                initials: 'ST',
+                color: 'from-pink-500 to-rose-600',
                 quote: 'The templates are beautiful and easy to customize. I landed my dream job thanks to the modern CV I created here.',
                 rating: 5
               },
               {
                 name: 'David Chen',
                 role: 'Graphic Designer at Creative Agency',
-                avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&q=80',
+                initials: 'DC',
+                color: 'from-emerald-500 to-teal-600',
                 quote: 'As a designer, I appreciate good design. Ezy CV exceeded my expectations with its creative templates!',
                 rating: 5
               }
@@ -946,11 +951,9 @@ const Home = () => {
 
                 {/* Author */}
                 <div className="flex items-center gap-3 md:gap-4">
-                  <img
-                    src={testimonial.avatar}
-                    alt={testimonial.name}
-                    className="w-11 h-11 md:w-14 md:h-14 rounded-full object-cover ring-4 ring-blue-100"
-                  />
+                  <div className={`w-11 h-11 md:w-14 md:h-14 rounded-full bg-gradient-to-br ${testimonial.color} flex items-center justify-center ring-4 ring-blue-100`}>
+                    <span className="text-white font-bold text-sm md:text-base">{testimonial.initials}</span>
+                  </div>
                   <div>
                     <div className="font-bold text-gray-900">{testimonial.name}</div>
                     <div className="text-sm text-gray-600">{testimonial.role}</div>

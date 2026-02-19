@@ -95,6 +95,10 @@ const cvSchema = new mongoose.Schema({
     title: { type: String },
     content: { type: String }
   }],
+  b2BackupUrl: {
+    type: String,
+    default: null
+  },
   settings: {
     primaryColor: { type: String, default: '#2563eb' },
     fontFamily: { type: String, default: 'Inter' },

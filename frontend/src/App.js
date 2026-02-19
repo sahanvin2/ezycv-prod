@@ -7,6 +7,7 @@ import ScrollToTop from './components/ScrollToTop';
 import ErrorBoundary from './components/ErrorBoundary';
 import LoadingScreen from './components/LoadingScreen';
 import CookieConsent from './components/CookieConsent';
+import SupportPopup from './components/SupportPopup';
 import Maintenance from './pages/Maintenance';
 
 // Lazy load pages for better performance
@@ -29,6 +30,7 @@ const EditProfile = lazy(() => import('./pages/EditProfile'));
 const Settings = lazy(() => import('./pages/Settings'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const PhoneLogin = lazy(() => import('./pages/PhoneLogin'));
+const SupportUs = lazy(() => import('./pages/SupportUs'));
 
 // Loading fallback component - Fast and attractive
 const PageLoader = () => (
@@ -93,8 +95,10 @@ function App() {
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/cookies" element={<CookiePolicy />} />
+                <Route path="/cookie-policy" element={<CookiePolicy />} />
                 <Route path="/edit-profile" element={<EditProfile />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/support-us" element={<SupportUs />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
@@ -112,6 +116,7 @@ function App() {
             }}
           />
           <CookieConsent />
+          <SupportPopup />
         </div>
       </Router>
     </ErrorBoundary>

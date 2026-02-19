@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import { useAuthStore } from '../store/store';
 import { authAPI } from '../services/api';
 import { signInWithGoogle, signInWithFacebook } from '../services/firebaseAuth';
-import { MediumBannerAd } from '../components/Ads/AdComponents';
 import toast from 'react-hot-toast';
 
 const Register = () => {
@@ -260,9 +259,9 @@ const Register = () => {
                   <input type="checkbox" className="w-4 h-4 text-blue-600 rounded mt-1" required />
                   <span className="text-sm text-gray-600">
                     I agree to the{' '}
-                    <button type="button" className="text-blue-600 hover:text-blue-700">Terms of Service</button>
+                    <Link to="/terms" className="text-blue-600 hover:text-blue-700">Terms of Service</Link>
                     {' '}and{' '}
-                    <button type="button" className="text-blue-600 hover:text-blue-700">Privacy Policy</button>
+                    <Link to="/privacy" className="text-blue-600 hover:text-blue-700">Privacy Policy</Link>
                   </span>
                 </label>
               </div>
@@ -350,10 +349,6 @@ const Register = () => {
             </div>
           </form>
 
-          {/* Ad */}
-          <div className="mt-8">
-            <MediumBannerAd />
-          </div>
         </motion.div>
       </div>
     </div>

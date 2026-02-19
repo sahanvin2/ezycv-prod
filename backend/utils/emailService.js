@@ -3,7 +3,7 @@ const nodemailer = require('nodemailer');
 // Site configuration
 const SITE_CONFIG = {
   name: 'Ezy CV',
-  email: 'ezycv22@gmail.com',
+  email: 'noreply@ezycv.org',
   location: 'Rambukkana, Sri Lanka',
   url: process.env.FRONTEND_URL || 'http://localhost:3000'
 };
@@ -66,7 +66,7 @@ async function sendEmail({ to, subject, html, text }) {
     }
 
     const mailOptions = {
-      from: `"${process.env.MAIL_FROM_NAME || 'Ezy CV'}" <${process.env.MAIL_FROM_ADDRESS || 'ezycv22@gmail.com'}>`,
+      from: `"${process.env.MAIL_FROM_NAME || 'Ezy CV'}" <${process.env.MAIL_FROM_ADDRESS || 'noreply@ezycv.org'}>`,
       to,
       subject,
       html,

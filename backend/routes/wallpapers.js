@@ -97,18 +97,15 @@ router.get('/', async (req, res) => {
       if (Object.keys(query).length > 0) {
         pipeline.push({ $match: query });
       }
-      
-      if (pageNum === 1 && !search) {
-        pipeline.push({ $sample: { size: limitNum } });
-        wallpapers = await Wallpaper.aggregate(pipeline);
-      } else {
-        pipeline.push({ $addFields: { _rand: { $mod: [{ $toLong: { $toDate: '$_id' } }, 97] } } });
-        pipeline.push({ $sort: { _rand: 1, _id: 1 } });
-        pipeline.push({ $skip: (pageNum - 1) * limitNum });
-        pipeline.push({ $limit: limitNum });
-        pipeline.push({ $project: { _rand: 0 } });
-        wallpapers = await Wallpaper.aggregate(pipeline);
-      }
+      // Use MongoDB $rand to generate a truly random float [0,1) per document.
+      // This fully breaks any insertion-order clustering (e.g. mobile/desktop batches),
+      // so every page across all device types is uniformly mixed.
+      pipeline.push({ $addFields: { _rand: { $rand: {} } } });
+      pipeline.push({ $sort: { _rand: 1 } });
+      pipeline.push({ $skip: (pageNum - 1) * limitNum });
+      pipeline.push({ $limit: limitNum });
+      pipeline.push({ $project: { _rand: 0 } });
+      wallpapers = await Wallpaper.aggregate(pipeline);
     } else if (sort === 'popular') {
       // Sort by all-time popularity
       const skip = (pageNum - 1) * limitNum;
@@ -161,16 +158,23 @@ router.get('/categories', async (req, res) => {
 });
 
 // @route   GET /api/wallpapers/stats
-// @desc    Get total wallpaper and photo counts for home page
+// @desc    Get total wallpaper, photo, and CV counts for home page
 // @access  Public
 router.get('/stats', async (req, res) => {
   try {
     const Photo = require('../models/Photo');
-    const [wallpaperCount, photoCount] = await Promise.all([
+    const CV = require('../models/CV');
+    const [wallpaperCount, photoCount, cvCount] = await Promise.all([
       Wallpaper.countDocuments(),
-      Photo.countDocuments()
+      Photo.countDocuments(),
+      CV.countDocuments()
     ]);
-    res.json({ wallpapers: wallpaperCount, stockPhotos: photoCount });
+    res.json({ 
+      wallpapers: wallpaperCount, 
+      stockPhotos: photoCount,
+      cvsCreated: cvCount,
+      totalDownloads: wallpaperCount + photoCount + cvCount
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });

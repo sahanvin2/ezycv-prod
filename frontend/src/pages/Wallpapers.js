@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStatsStore, useAuthStore } from '../store/store';
 import toast from 'react-hot-toast';
-import { showAdBeforeDownload } from '../utils/adHelper';
+import { triggerSupportPopup } from '../components/SupportPopup';
 import { 
   trackView, 
   trackDownload, 
@@ -66,14 +66,35 @@ const Wallpapers = () => {
   
   // Shuffle seed for consistent randomization per session
   const shuffleSeed = useRef(getSessionSeed());
-  
-  // Get shuffled wallpapers for display - ensures variety on each category visit
+
+  // Get shuffled wallpapers for display - backend already randomizes, just pass-through
   const displayWallpapers = useMemo(() => {
     if (!wallpapers.length) return [];
-    // Create category-specific seed to ensure different order per category
-    const categorySeed = shuffleSeed.current + selectedCategory.charCodeAt(0) * 1000 + currentPage * 100;
-    return seededShuffle(wallpapers, categorySeed);
-  }, [wallpapers, selectedCategory, currentPage]);
+    return wallpapers;
+  }, [wallpapers]);
+
+  // Swipe-down to close modal on mobile
+  const touchStartY = useRef(null);
+  const [swipeDelta, setSwipeDelta] = useState(0);
+
+  const handleModalTouchStart = (e) => {
+    touchStartY.current = e.touches[0].clientY;
+    setSwipeDelta(0);
+  };
+
+  const handleModalTouchMove = (e) => {
+    if (touchStartY.current === null) return;
+    const delta = e.touches[0].clientY - touchStartY.current;
+    if (delta > 0) setSwipeDelta(delta);
+  };
+
+  const handleModalTouchEnd = () => {
+    if (swipeDelta > 80) {
+      setSelectedWallpaper(null);
+    }
+    touchStartY.current = null;
+    setSwipeDelta(0);
+  };
 
   // Related images state
   const [relatedWallpapers, setRelatedWallpapers] = useState([]);
@@ -161,7 +182,7 @@ const Wallpapers = () => {
       if (selectedDevice !== 'all') params.append('deviceType', selectedDevice);
       params.append('page', page.toString());
       params.append('limit', ITEMS_PER_PAGE.toString());
-      params.append('sort', 'trending');
+      params.append('sort', 'random');
       
       const response = await fetch(`${API_URL}/api/wallpapers?${params}`);
       
@@ -268,11 +289,8 @@ const Wallpapers = () => {
     e.stopPropagation(); // Prevent modal from opening
     
     if (downloadingId === wallpaper._id) return; // Prevent double-click
-    
-    // Show ad before starting download
-    showAdBeforeDownload(() => {
-      proceedWithDownload(wallpaper);
-    }, 'wallpaper');
+
+    proceedWithDownload(wallpaper);
   };
   
   // Actual download logic
@@ -356,6 +374,7 @@ const Wallpapers = () => {
       
       toast.dismiss('download-' + wallpaper._id);
       toast.success('Downloaded successfully!', { icon: '⬇️' });
+      triggerSupportPopup();
       trackDownload(wallpaper);
     } catch (error) {
       console.error('Download failed:', error);
@@ -506,19 +525,7 @@ const Wallpapers = () => {
               ))}
             </div>
             
-            {/* Shuffle button */}
-            <motion.button
-              onClick={refreshShuffle}
-              whileHover={{ scale: 1.05, rotate: 180 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-1.5 px-3 py-1.5 md:py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg text-xs md:text-sm font-medium shadow-md hover:shadow-lg transition-all"
-              title="Shuffle for fresh content"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              <span className="hidden sm:inline">Shuffle</span>
-            </motion.button>
+
           </div>
         </div>
       </div>
@@ -761,13 +768,22 @@ const Wallpapers = () => {
             onClick={() => setSelectedWallpaper(null)}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+              initial={{ y: 60, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 60, opacity: 0 }}
               id="wallpaper-modal-content"
               className="bg-white rounded-t-2xl md:rounded-2xl shadow-2xl max-w-5xl w-full max-h-[95vh] md:max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
+              onTouchStart={handleModalTouchStart}
+              onTouchMove={handleModalTouchMove}
+              onTouchEnd={handleModalTouchEnd}
+              style={swipeDelta > 0 ? { transform: `translateY(${Math.min(swipeDelta * 0.35, 60)}px)`, transition: 'none' } : {}}
             >
+              {/* Swipe-down indicator — visible only on mobile */}
+              <div className="flex justify-center pt-3 pb-1 md:hidden">
+                <div className="w-10 h-1.5 bg-gray-300 rounded-full"></div>
+              </div>
+              <p className="text-center text-xs text-gray-400 pb-1 md:hidden">Swipe down to close</p>
               {/* Image - use preview for fast loading */}
               <div className="relative bg-gray-900">
                 <img
