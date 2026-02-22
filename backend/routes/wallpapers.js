@@ -5,7 +5,14 @@ const path = require('path');
 const fs = require('fs');
 const Wallpaper = require('../models/Wallpaper');
 const { auth, optionalAuth } = require('../middleware/auth');
-const { uploadToB2, deleteFromB2, createPreview, createOptimizedDownload, uploadBufferToB2 } = require('../utils/b2Storage');
+const { uploadToB2, deleteFromB2, createPreview, createOptimizedDownload, uploadBufferToB2, normalizeCdnObject } = require('../utils/b2Storage');
+
+// Helper: convert mongoose doc OR aggregate plain-object to a CDN-normalised plain object
+const normW = (item) => {
+  const obj = item && item.toObject ? item.toObject() : Object.assign({}, item);
+  return normalizeCdnObject(obj);
+};
+const normWList = (items) => Array.isArray(items) ? items.map(normW) : items;
 
 // Always use memory storage for B2 cloud uploads
 const upload = multer({
@@ -128,7 +135,7 @@ router.get('/', async (req, res) => {
     }
 
     res.json({
-      wallpapers,
+      wallpapers: normWList(wallpapers),
       pagination: {
         current: pageNum,
         pages: Math.ceil(total / limitNum),
@@ -235,7 +242,7 @@ router.get('/related/:id', async (req, res) => {
       related.push(...backfill);
     }
 
-    res.json(related);
+    res.json(normWList(related));
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -257,7 +264,7 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Wallpaper not found' });
     }
     
-    res.json(wallpaper);
+    res.json(normW(wallpaper));
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -279,9 +286,10 @@ router.post('/:id/download', async (req, res) => {
       return res.status(404).json({ message: 'Wallpaper not found' });
     }
     
+    const norm = normW(wallpaper);
     res.json({ 
       message: 'Download tracked',
-      downloadUrl: wallpaper.downloadUrl || wallpaper.imageUrl
+      downloadUrl: norm.downloadUrl || norm.imageUrl
     });
   } catch (error) {
     console.error(error);
@@ -303,7 +311,8 @@ router.get('/:id/proxy-download', async (req, res) => {
     // Fetch the image from the source (prefer downloadUrl for quality)
     const https = require('https');
     const http = require('http');
-    const imageUrl = wallpaper.downloadUrl || wallpaper.imageUrl;
+    const norm = normW(wallpaper);
+    const imageUrl = norm.downloadUrl || norm.imageUrl;
     const protocol = imageUrl.startsWith('https') ? https : http;
     
     protocol.get(imageUrl, (imageResponse) => {
@@ -340,7 +349,7 @@ router.post('/:id/like', async (req, res) => {
       return res.status(404).json({ message: 'Wallpaper not found' });
     }
     
-    res.json(wallpaper);
+    res.json(normW(wallpaper));
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });

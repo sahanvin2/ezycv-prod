@@ -374,6 +374,41 @@ async function uploadBufferToB2(buffer, key, contentType) {
   }
 }
 
+/**
+ * Normalise any stored URL to use the BunnyCDN base.
+ *
+ * Handles two legacy patterns that may be persisted in MongoDB:
+ *   1. Public B2 download URL  → https://f005.backblazeb2.com/file/<bucket>/<key>
+ *   2. S3-compatible endpoint  → https://s3.us-east-005.backblazeb2.com/<bucket>/<key>
+ *
+ * Both are rewritten to: <B2_PUBLIC_BASE>/<key>
+ */
+function normalizeToCdn(url) {
+  if (!url) return url;
+  const cdnBase = (process.env.B2_PUBLIC_BASE || 'https://ezycv.b-cdn.net').replace(/\/$/, '');
+  // Already uses the CDN — nothing to do
+  if (url.startsWith(cdnBase)) return url;
+  // Pattern 1: https://fNNN.backblazeb2.com/file/<bucket>/<key>
+  const pub = url.match(/https?:\/\/f\d+\.backblazeb2\.com\/file\/[^/]+\/(.+)/);
+  if (pub) return `${cdnBase}/${pub[1]}`;
+  // Pattern 2: https://s3.<region>.backblazeb2.com/<bucket>/<key>
+  const s3  = url.match(/https?:\/\/s3[^/]*\.backblazeb2\.com\/[^/]+\/(.+)/);
+  if (s3)  return `${cdnBase}/${s3[1]}`;
+  return url;
+}
+
+/**
+ * Apply normalizeToCdn to all URL fields in a plain wallpaper/photo object.
+ */
+function normalizeCdnObject(obj) {
+  if (!obj) return obj;
+  const urlFields = ['imageUrl', 'thumbnailUrl', 'previewUrl', 'downloadUrl', 'url'];
+  urlFields.forEach(field => {
+    if (obj[field]) obj[field] = normalizeToCdn(obj[field]);
+  });
+  return obj;
+}
+
 module.exports = {
   getS3Client,
   checkConnection,
@@ -386,5 +421,7 @@ module.exports = {
   generateFileName,
   createPreview,
   createOptimizedDownload,
-  uploadBufferToB2
+  uploadBufferToB2,
+  normalizeToCdn,
+  normalizeCdnObject
 };

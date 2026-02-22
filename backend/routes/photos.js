@@ -3,7 +3,14 @@ const router = express.Router();
 const multer = require('multer');
 const Photo = require('../models/Photo');
 const { auth, optionalAuth } = require('../middleware/auth');
-const { uploadToB2, deleteFromB2 } = require('../utils/b2Storage');
+const { uploadToB2, deleteFromB2, normalizeCdnObject } = require('../utils/b2Storage');
+
+// Helper: normalise a mongoose doc or plain-object to CDN URLs
+const normP = (item) => {
+  const obj = item && item.toObject ? item.toObject() : Object.assign({}, item);
+  return normalizeCdnObject(obj);
+};
+const normPList = (items) => Array.isArray(items) ? items.map(normP) : items;
 
 // Always use memory storage for B2 cloud uploads
 const upload = multer({
@@ -53,7 +60,7 @@ router.get('/', async (req, res) => {
     const total = await Photo.countDocuments(query);
 
     res.json({
-      photos,
+      photos: normPList(photos),
       pagination: {
         current: parseInt(page),
         pages: Math.ceil(total / parseInt(limit)),
@@ -97,7 +104,7 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Photo not found' });
     }
     
-    res.json(photo);
+    res.json(normP(photo));
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -119,9 +126,10 @@ router.post('/:id/download', async (req, res) => {
       return res.status(404).json({ message: 'Photo not found' });
     }
     
+    const normPhoto = normP(photo);
     res.json({ 
       message: 'Download tracked',
-      downloadUrl: photo.imageUrl
+      downloadUrl: normPhoto.imageUrl
     });
   } catch (error) {
     console.error(error);
@@ -143,7 +151,7 @@ router.get('/:id/proxy-download', async (req, res) => {
     // Fetch the image from the source
     const https = require('https');
     const http = require('http');
-    const imageUrl = photo.imageUrl;
+    const imageUrl = normP(photo).imageUrl;
     const protocol = imageUrl.startsWith('https') ? https : http;
     
     protocol.get(imageUrl, (imageResponse) => {
@@ -180,7 +188,7 @@ router.post('/:id/like', async (req, res) => {
       return res.status(404).json({ message: 'Photo not found' });
     }
     
-    res.json(photo);
+    res.json(normP(photo));
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });

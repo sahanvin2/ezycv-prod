@@ -288,7 +288,7 @@ const Login = () => {
               <div className="text-sm text-blue-200">Wallpapers</div>
             </div>
             <div className="bg-white/10 rounded-xl p-4">
-              <div className="text-2xl font-bold">5K+</div>
+              <div className="text-2xl font-bold">500+</div>
               <div className="text-sm text-blue-200">Photos</div>
             </div>
           </div>
