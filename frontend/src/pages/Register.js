@@ -183,7 +183,7 @@ const Register = () => {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder="John Doe"
+                  placeholder="Your full name"
                   className="input-field"
                   required
                 />
@@ -198,7 +198,7 @@ const Register = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="you@example.com"
+                  placeholder="Your email address"
                   className="input-field"
                   required
                 />
@@ -214,7 +214,7 @@ const Register = () => {
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
-                    placeholder="••••••••"
+                    placeholder="Create a strong password"
                     className="input-field pr-12"
                     required
                     minLength={6}
@@ -248,7 +248,7 @@ const Register = () => {
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  placeholder="••••••••"
+                  placeholder="Confirm your password"
                   className="input-field"
                   required
                 />

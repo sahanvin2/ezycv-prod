@@ -10,11 +10,9 @@ const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuthStore();
 
   const navigation = [
-    { name: 'Home', href: '/' },
-    { name: 'CV Builder', href: '/cv-builder' },
-    { name: 'Templates', href: '/cv-templates' },
+    { name: 'Free CV Builder', href: '/cv-builder' },
     { name: 'Wallpapers', href: '/wallpapers' },
-    { name: 'Stock Photos', href: '/stock-photos' },
+    { name: 'Stock Images', href: '/stock-photos' },
   ];
 
   const isActive = (path) => location.pathname === path;

@@ -128,7 +128,7 @@ const Login = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="you@example.com"
+                  placeholder="Your email address"
                   className="input-field"
                   required
                 />
@@ -144,7 +144,7 @@ const Login = () => {
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
-                    placeholder="••••••••"
+                    placeholder="Your password"
                     className="input-field pr-12"
                     required
                   />
@@ -280,16 +280,16 @@ const Login = () => {
           
           <div className="grid grid-cols-3 gap-4 text-center">
             <div className="bg-white/10 rounded-xl p-4">
-              <div className="text-2xl font-bold">50K+</div>
+              <div className="text-2xl font-bold">500+</div>
               <div className="text-sm text-blue-200">CVs Created</div>
             </div>
             <div className="bg-white/10 rounded-xl p-4">
-              <div className="text-2xl font-bold">10K+</div>
+              <div className="text-2xl font-bold">5K+</div>
               <div className="text-sm text-blue-200">Wallpapers</div>
             </div>
             <div className="bg-white/10 rounded-xl p-4">
-              <div className="text-2xl font-bold">500+</div>
-              <div className="text-sm text-blue-200">Photos</div>
+              <div className="text-2xl font-bold">3K+</div>
+              <div className="text-sm text-blue-200">Stock Photos</div>
             </div>
           </div>
         </div>
