@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 // ── Copyable field ──────────────────────────────────────────────────────────
-const CopyField = ({ label, value }) => {
+const CopyField = ({ label, value, highlight = false }) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -18,19 +18,24 @@ const CopyField = ({ label, value }) => {
   };
 
   return (
-    <div className="flex items-center justify-between gap-3 py-2.5 px-4 bg-white/5 rounded-xl border border-white/10 group hover:border-purple-400/40 transition-all">
-      <div className="min-w-0">
-        <p className="text-xs text-gray-400 mb-0.5">{label}</p>
-        <p className="text-white font-semibold text-sm break-all select-all">{value}</p>
+    <motion.div
+      whileHover={{ scale: 1.01 }}
+      onClick={handleCopy}
+      className={`flex items-center justify-between gap-3 py-3 px-4 rounded-xl border cursor-pointer transition-all select-none
+        ${highlight
+          ? 'bg-gradient-to-r from-emerald-900/40 to-teal-900/40 border-emerald-500/40 hover:border-emerald-400/70 hover:shadow-lg hover:shadow-emerald-500/10'
+          : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-purple-400/40'
+        }`}
+    >
+      <div className="min-w-0 flex-1">
+        <p className={`text-xs mb-0.5 font-medium ${highlight ? 'text-emerald-400' : 'text-gray-400'}`}>{label}</p>
+        <p className={`font-bold text-sm break-all ${highlight ? 'text-emerald-200 text-base' : 'text-white'}`}>{value}</p>
       </div>
-      <button
-        onClick={handleCopy}
-        className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center bg-white/10 hover:bg-purple-500/30 transition-all"
-        title="Copy"
-      >
+      <div className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all
+        ${copied ? 'bg-green-500/30' : highlight ? 'bg-emerald-500/20 hover:bg-emerald-500/40' : 'bg-white/10 hover:bg-purple-500/30'}`}>
         {copied ? (
           <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
           </svg>
         ) : (
           <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -38,104 +43,13 @@ const CopyField = ({ label, value }) => {
               d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
           </svg>
         )}
-      </button>
-    </div>
-  );
-};
-
-// ── PayHere dummy modal ─────────────────────────────────────────────────────
-const PayHereModal = ({ onClose }) => {
-  const [amount, setAmount] = useState('');
-  const preset = [200, 500, 1000, 2500];
-
-  return (
-    <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      onClick={onClose}
-    >
-      <motion.div
-        className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-8 border border-white/10"
-        initial={{ scale: 0.85, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.85, opacity: 0 }}
-        onClick={e => e.stopPropagation()}
-      >
-        {/* PayHere logo area */}
-        <div className="flex items-center justify-center mb-6 gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
-            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-white font-bold text-lg leading-tight">PayHere</p>
-            <p className="text-gray-400 text-xs">Online Payment Gateway</p>
-          </div>
-        </div>
-
-        <h3 className="text-white text-center font-bold text-lg mb-2">Support Ezy CV 💙</h3>
-        <p className="text-gray-400 text-center text-sm mb-6">Choose or enter an amount (LKR)</p>
-
-        {/* Preset amounts */}
-        <div className="grid grid-cols-4 gap-2 mb-4">
-          {preset.map(p => (
-            <button
-              key={p}
-              onClick={() => setAmount(String(p))}
-              className={`py-2 rounded-xl text-sm font-semibold transition-all border ${
-                amount === String(p)
-                  ? 'bg-blue-600 text-white border-blue-500'
-                  : 'bg-white/10 text-gray-300 border-white/10 hover:bg-white/20'
-              }`}
-            >
-              {p}
-            </button>
-          ))}
-        </div>
-
-        <input
-          type="number"
-          value={amount}
-          onChange={e => setAmount(e.target.value)}
-          placeholder="Enter custom amount"
-          className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm mb-6"
-        />
-
-        <button
-          onClick={() => {
-            onClose();
-            toast('PayHere integration coming soon! For now, please use bank transfer. 🙏', {
-              icon: '💙',
-              duration: 5000,
-              style: { background: '#1e293b', color: '#fff', borderRadius: '12px' }
-            });
-          }}
-          className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-base hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/25"
-        >
-          Donate {amount ? `LKR ${amount}` : 'Now'} via PayHere
-        </button>
-
-        <p className="text-center text-xs text-gray-500 mt-4">
-          🔒 Secured by PayHere · Visa · MasterCard · Amex · eZCash
-        </p>
-
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </motion.div>
+      </div>
     </motion.div>
   );
 };
 
 // ── Main page ───────────────────────────────────────────────────────────────
 const SupportUs = () => {
-  const [showPayHere, setShowPayHere] = useState(false);
   const [heartbeat, setHeartbeat] = useState(false);
 
   useEffect(() => {
@@ -241,17 +155,17 @@ const SupportUs = () => {
           transition={{ delay: 0.4 }}
           className="flex flex-col sm:flex-row gap-4 justify-center"
         >
-          <button
-            onClick={() => setShowPayHere(true)}
-            className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-2xl text-lg shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105 transition-all"
-          >
-            💳 Donate via PayHere
-          </button>
           <a
             href="#bank-transfer"
+            className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-2xl text-lg shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105 transition-all"
+          >
+            🏦 Donate via Bank Transfer
+          </a>
+          <a
+            href="#payment-gateway"
             className="px-8 py-4 bg-white/10 border border-white/20 text-white font-bold rounded-2xl text-lg hover:bg-white/20 transition-all"
           >
-            🏦 Bank Transfer
+            💳 Online Payment (Soon)
           </a>
         </motion.div>
       </section>
@@ -340,39 +254,79 @@ const SupportUs = () => {
         </div>
       </section>
 
-      {/* ── PAYHERE ─────────────────────────────────────────── */}
-      <section className="max-w-2xl mx-auto px-4 py-12">
+      {/* ── PAYMENT GATEWAY — COMING SOON ───────────────────── */}
+      <section id="payment-gateway" className="max-w-2xl mx-auto px-4 py-12 scroll-mt-24">
         <motion.div
           initial={{ opacity: 0, scale: 0.97 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          className="bg-gradient-to-br from-blue-900/40 to-indigo-900/40 border border-blue-500/30 rounded-3xl p-8 text-center shadow-lg shadow-blue-500/10"
+          className="relative overflow-hidden rounded-3xl border border-dashed border-blue-400/40 bg-gradient-to-br from-slate-900/80 to-indigo-950/60 p-8 text-center backdrop-blur-sm"
         >
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-5 shadow-lg">
-            <svg className="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-            </svg>
+          {/* Ambient glow */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-40 bg-blue-600/15 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 right-0 w-48 h-48 bg-indigo-600/10 rounded-full blur-3xl" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Online Payment</h2>
-          <p className="text-gray-300 mb-2">
-            We plan to integrate <strong className="text-white">PayHere</strong> — Sri Lanka's leading payment gateway — 
-            so you can donate  with your credit/debit card or mobile wallet in seconds.
-          </p>
-          <p className="text-yellow-300 text-sm mb-6">⚡ Integration coming very soon!</p>
 
-          <button
-            onClick={() => setShowPayHere(true)}
-            className="px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-blue-500/30 hover:scale-105 transition-all text-lg"
-          >
-            💳 Try PayHere Donation
-          </button>
+          {/* Lock badge */}
+          <div className="relative z-10">
+            <div className="inline-flex items-center gap-2 bg-amber-500/20 text-amber-300 border border-amber-400/30 px-4 py-1.5 rounded-full text-xs font-semibold mb-6 tracking-wide uppercase">
+              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+              </svg>
+              Coming Soon
+            </div>
 
-          <div className="mt-5 flex flex-wrap justify-center gap-3 text-xs text-gray-400">
-            <span className="flex items-center gap-1">🔒 SSL Secured</span>
-            <span className="flex items-center gap-1">💳 Visa / MasterCard</span>
-            <span className="flex items-center gap-1">📱 eZCash / mCash</span>
-            <span className="flex items-center gap-1">🏦 Online Banking</span>
+            {/* Gateway icons */}
+            <div className="flex items-center justify-center gap-4 mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25 opacity-70">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+              </div>
+            </div>
+
+            <h2 className="text-2xl font-extrabold text-white mb-3">Online Payment Gateway</h2>
+            <p className="text-gray-300 text-base leading-relaxed mb-2 max-w-md mx-auto">
+              We're integrating <strong className="text-white">PayHere</strong> — Sri Lanka's most trusted payment gateway —
+              so you can donate instantly with your card or mobile wallet.
+            </p>
+            <p className="text-gray-400 text-sm mb-6 max-w-sm mx-auto">
+              This feature is actively being worked on and will be available very soon.
+            </p>
+
+            {/* Progress indicator */}
+            <div className="max-w-xs mx-auto mb-6">
+              <div className="flex justify-between text-xs text-gray-400 mb-1.5">
+                <span>Integration Progress</span>
+                <span className="text-blue-400 font-semibold">In Development</span>
+              </div>
+              <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  whileInView={{ width: '60%' }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 1.5, ease: 'easeOut', delay: 0.3 }}
+                  className="h-full bg-gradient-to-r from-blue-500 to-indigo-400 rounded-full"
+                />
+              </div>
+            </div>
+
+            {/* Accepted methods (greyed out) */}
+            <div className="flex flex-wrap justify-center gap-3 text-xs text-gray-500">
+              {['💳 Visa', '💳 MasterCard', '📱 eZCash', '📱 mCash', '🏦 Online Banking'].map(m => (
+                <span key={m} className="flex items-center gap-1 bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg opacity-60">
+                  {m}
+                </span>
+              ))}
+            </div>
+
+            <p className="mt-5 text-xs text-gray-500">
+              💌 Want to be notified when it's live?{' '}
+              <a href="mailto:support@ezycv.org" className="text-blue-400 hover:text-blue-300 underline underline-offset-2">
+                Drop us an email
+              </a>
+            </p>
           </div>
         </motion.div>
       </section>
@@ -384,42 +338,111 @@ const SupportUs = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-2 bg-green-500/20 text-green-300 px-4 py-2 rounded-full text-sm font-medium mb-4 border border-green-500/30">
-              ✅ Available Now
+          {/* Section header */}
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+              <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse inline-block" />
+              Available Now · Instant &amp; Free
             </div>
-            <h2 className="text-3xl font-bold text-white mb-2">Direct Bank Transfer</h2>
-            <p className="text-gray-400">Transfer directly to the accounts below. Click any field to copy it instantly.</p>
+            <h2 className="text-4xl font-extrabold text-white mb-3 leading-tight">
+              Bank Transfer
+            </h2>
+            <p className="text-gray-400 text-base max-w-sm mx-auto">
+              Transfer directly to either account below. Tap any row to instantly copy the details.
+            </p>
           </div>
 
-          <div className="space-y-6">
+          {/* Tip banner */}
+          <div className="flex items-start gap-3 bg-blue-500/10 border border-blue-400/20 rounded-2xl px-5 py-4 mb-8">
+            <span className="text-2xl flex-shrink-0">💡</span>
+            <p className="text-blue-200 text-sm leading-relaxed">
+              <strong>Pro tip:</strong> Tap any field to copy it instantly. After your transfer, 
+              send a screenshot to{' '}
+              <a href="mailto:support@ezycv.org" className="text-blue-400 underline underline-offset-2 hover:text-blue-300">
+                support@ezycv.org
+              </a>{' '}
+              so we can thank you personally! 🙏
+            </p>
+          </div>
+
+          {/* Bank account cards */}
+          <div className="space-y-8">
             {bankAccounts.map((acc, idx) => (
               <motion.div
                 key={idx}
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
-                className="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 rounded-2xl p-6 space-y-3"
+                transition={{ delay: idx * 0.12 }}
+                className="relative group"
               >
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-sm font-bold text-white">
-                    {idx + 1}
+                {/* Glow border */}
+                <div className={`absolute -inset-0.5 rounded-3xl blur opacity-40 group-hover:opacity-70 transition-opacity duration-500
+                  ${idx === 0 ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : 'bg-gradient-to-r from-purple-500 to-indigo-500'}`} />
+
+                <div className="relative bg-slate-900/90 border border-white/10 rounded-3xl overflow-hidden backdrop-blur-sm">
+
+                  {/* Card header */}
+                  <div className={`px-6 py-4 flex items-center justify-between
+                    ${idx === 0
+                      ? 'bg-gradient-to-r from-emerald-900/60 to-teal-900/40'
+                      : 'bg-gradient-to-r from-purple-900/60 to-indigo-900/40'}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-white text-lg shadow-lg
+                        ${idx === 0 ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-gradient-to-br from-purple-500 to-indigo-600'}`}>
+                        {idx + 1}
+                      </div>
+                      <div>
+                        <p className="text-white font-bold text-base leading-tight">{acc.bank}</p>
+                        <p className={`text-xs font-medium ${idx === 0 ? 'text-emerald-300' : 'text-purple-300'}`}>{acc.label}</p>
+                      </div>
+                    </div>
+                    <div className={`text-xs px-3 py-1 rounded-full font-semibold border
+                      ${idx === 0
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                        : 'bg-purple-500/20 text-purple-300 border-purple-500/30'}`}>
+                      ✓ Verified
+                    </div>
                   </div>
-                  <span className="text-white font-semibold">{acc.label}</span>
+
+                  {/* Bank icon row */}
+                  <div className="px-6 pt-5 pb-1 flex items-center gap-3 border-b border-white/5 mb-4">
+                    <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+                      <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </div>
+                    <p className="text-gray-400 text-sm">Branch: <span className="text-white font-medium">{acc.branch}</span></p>
+                  </div>
+
+                  {/* Copyable fields */}
+                  <div className="px-6 pb-6 space-y-2.5">
+                    <CopyField label="Account Holder Name" value={acc.accountHolder} />
+                    <CopyField label="Account Number" value={acc.accountNumber} highlight />
+                    <CopyField label="Bank" value={acc.bank} />
+                    <CopyField label="Branch" value={acc.branch} />
+                  </div>
                 </div>
-
-                <CopyField label="Bank" value={acc.bank} />
-                <CopyField label="Branch" value={acc.branch} />
-                <CopyField label="Account Holder Name" value={acc.accountHolder} />
-                <CopyField label="Account Number" value={acc.accountNumber} />
-
-                <p className="text-xs text-gray-500 pt-1 text-center">
-                  💌 Please send a screenshot to <span className="text-purple-400">support@ezycv.org</span> after transferring so we can thank you personally.
-                </p>
               </motion.div>
             ))}
           </div>
+
+          {/* Bottom note */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.4 }}
+            className="mt-8 text-center"
+          >
+            <div className="inline-flex items-center gap-2 text-gray-400 text-sm bg-white/5 border border-white/10 px-5 py-3 rounded-2xl">
+              <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              Your transfer goes <strong className="text-white mx-1">directly</strong> to the developer — zero platform fees, 100% of your support reaches Ezy CV.
+            </div>
+          </motion.div>
         </motion.div>
       </section>
 
@@ -479,12 +502,12 @@ const SupportUs = () => {
               a kinder, more equal place. <strong className="text-white">Thank you from the bottom of my heart.</strong>
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button
-                onClick={() => setShowPayHere(true)}
+              <a
+                href="#bank-transfer"
                 className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-2xl shadow-lg hover:scale-105 transition-all"
               >
-                💙 Support Now
-              </button>
+                🏦 Donate via Bank Transfer
+              </a>
               <a
                 href="/cv-builder"
                 className="px-8 py-4 bg-white/10 border border-white/20 text-white font-bold rounded-2xl hover:bg-white/20 transition-all"
@@ -496,12 +519,6 @@ const SupportUs = () => {
         </motion.div>
       </section>
 
-      {/* PayHere modal */}
-      <AnimatePresence>
-        {showPayHere && (
-          <PayHereModal onClose={() => setShowPayHere(false)} />
-        )}
-      </AnimatePresence>
     </div>
   );
 };
