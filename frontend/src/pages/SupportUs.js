@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { Check, Copy, Lock, CreditCard, Building2, ShieldCheck, Heart, Star, Megaphone, MessageSquare, Bug, User, Flame, Globe, Package, MailOpen, Shield, Rocket, Coffee, Smartphone, Mail, Lightbulb, HeartHandshake, Target } from 'lucide-react';
 
 // ── Copyable field ──────────────────────────────────────────────────────────
 const CopyField = ({ label, value, highlight = false }) => {
@@ -34,14 +35,9 @@ const CopyField = ({ label, value, highlight = false }) => {
       <div className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all
         ${copied ? 'bg-green-500/30' : highlight ? 'bg-emerald-500/20 hover:bg-emerald-500/40' : 'bg-white/10 hover:bg-purple-500/30'}`}>
         {copied ? (
-          <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-          </svg>
+          <Check className="w-4 h-4 text-green-400" strokeWidth={2.5} />
         ) : (
-          <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-          </svg>
+          <Copy className="w-4 h-4 text-gray-300" />
         )}
       </div>
     </motion.div>
@@ -86,10 +82,10 @@ const SupportUs = () => {
   ];
 
   const otherWays = [
-    { icon: '🌟', title: 'Star on GitHub', desc: 'Give a star to show your love and help others discover us.' },
-    { icon: '📢', title: 'Spread the Word', desc: 'Tell a friend who is job hunting. One share can change someone\'s life.' },
-    { icon: '💬', title: 'Leave a Review', desc: 'Write how Ezy CV helped you — your words mean everything to us.' },
-    { icon: '🐞', title: 'Report Bugs', desc: 'Found something broken? Tell us! You help make EzyCV better for everyone.' },
+    { icon: <Star className="w-7 h-7 text-yellow-400" />, title: 'Star on GitHub', desc: 'Give a star to show your love and help others discover us.' },
+    { icon: <Megaphone className="w-7 h-7 text-blue-400" />, title: 'Spread the Word', desc: 'Tell a friend who is job hunting. One share can change someone\'s life.' },
+    { icon: <MessageSquare className="w-7 h-7 text-green-400" />, title: 'Leave a Review', desc: 'Write how Ezy CV helped you — your words mean everything to us.' },
+    { icon: <Bug className="w-7 h-7 text-red-400" />, title: 'Report Bugs', desc: 'Found something broken? Tell us! You help make EzyCV better for everyone.' },
   ];
 
   return (
@@ -108,9 +104,9 @@ const SupportUs = () => {
         <motion.div
           animate={{ scale: heartbeat ? 1.35 : 1 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="inline-block mb-6 text-7xl"
+          className="inline-block mb-6"
         >
-          ❤️
+          <Heart className="w-16 h-16 text-red-500" fill="currentColor" />
         </motion.div>
 
         <motion.h1
@@ -157,15 +153,15 @@ const SupportUs = () => {
         >
           <a
             href="#bank-transfer"
-            className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-2xl text-lg shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105 transition-all"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-2xl text-lg shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105 transition-all"
           >
-            🏦 Donate via Bank Transfer
+            <Building2 className="w-5 h-5" /> Donate via Bank Transfer
           </a>
           <a
             href="#payment-gateway"
-            className="px-8 py-4 bg-white/10 border border-white/20 text-white font-bold rounded-2xl text-lg hover:bg-white/20 transition-all"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-white/10 border border-white/20 text-white font-bold rounded-2xl text-lg hover:bg-white/20 transition-all"
           >
-            💳 Online Payment (Soon)
+            <CreditCard className="w-5 h-5" /> Online Payment (Soon)
           </a>
         </motion.div>
       </section>
@@ -181,8 +177,8 @@ const SupportUs = () => {
           <div className="absolute top-0 right-0 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-2xl flex-shrink-0">
-              👨‍💻
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+              <User className="w-6 h-6 text-white" />
             </div>
             <div>
               <p className="text-white font-bold text-lg">Sahan Nawarathne</p>
@@ -213,7 +209,7 @@ const SupportUs = () => {
               who needs it, and maybe — just maybe — build more amazing things for you.
             </p>
             <p>
-              Thank you for being here. Truly. 🙏
+              Thank you for being here. Truly. <HeartHandshake className="w-5 h-5 inline text-purple-400" />
             </p>
           </div>
         </motion.div>
@@ -227,16 +223,16 @@ const SupportUs = () => {
           viewport={{ once: true }}
           className="text-center text-3xl font-bold mb-10"
         >
-          Your support keeps this alive 🕯️
+          Your support keeps this alive <Flame className="w-5 h-5 inline text-amber-400" />
         </motion.h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {[
-            { icon: '🌐', title: 'Server Costs', desc: 'Hosting the app so thousands can use it 24/7 without interruption.' },
-            { icon: '📦', title: 'Storage & CDN', desc: 'Storing thousands of wallpapers and photos and delivering them fast.' },
-            { icon: '📬', title: 'Email Service', desc: 'Sending password resets, welcome emails, and support replies.' },
-            { icon: '🛡️', title: 'Security & SSL', desc: 'Keeping your data secure with proper certificates and monitoring.' },
-            { icon: '🚀', title: 'New Features', desc: 'More CV templates, backgrounds, and tools — all completely free.' },
-            { icon: '☕', title: 'Developer Fuel', desc: 'An occasional cup of tea to keep the code flowing at midnight.' },
+            { icon: <Globe className="w-7 h-7 text-blue-400" />, title: 'Server Costs', desc: 'Hosting the app so thousands can use it 24/7 without interruption.' },
+            { icon: <Package className="w-7 h-7 text-orange-400" />, title: 'Storage & CDN', desc: 'Storing thousands of wallpapers and photos and delivering them fast.' },
+            { icon: <MailOpen className="w-7 h-7 text-teal-400" />, title: 'Email Service', desc: 'Sending password resets, welcome emails, and support replies.' },
+            { icon: <Shield className="w-7 h-7 text-green-400" />, title: 'Security & SSL', desc: 'Keeping your data secure with proper certificates and monitoring.' },
+            { icon: <Rocket className="w-7 h-7 text-purple-400" />, title: 'New Features', desc: 'More CV templates, backgrounds, and tools — all completely free.' },
+            { icon: <Coffee className="w-7 h-7 text-amber-400" />, title: 'Developer Fuel', desc: 'An occasional cup of tea to keep the code flowing at midnight.' },
           ].map((item, i) => (
             <motion.div
               key={item.title}
@@ -271,18 +267,14 @@ const SupportUs = () => {
           {/* Lock badge */}
           <div className="relative z-10">
             <div className="inline-flex items-center gap-2 bg-amber-500/20 text-amber-300 border border-amber-400/30 px-4 py-1.5 rounded-full text-xs font-semibold mb-6 tracking-wide uppercase">
-              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-              </svg>
+              <Lock className="w-3.5 h-3.5" />
               Coming Soon
             </div>
 
             {/* Gateway icons */}
             <div className="flex items-center justify-center gap-4 mb-6">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25 opacity-70">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                </svg>
+                <CreditCard className="w-8 h-8 text-white" />
               </div>
             </div>
 
@@ -314,15 +306,21 @@ const SupportUs = () => {
 
             {/* Accepted methods (greyed out) */}
             <div className="flex flex-wrap justify-center gap-3 text-xs text-gray-500">
-              {['💳 Visa', '💳 MasterCard', '📱 eZCash', '📱 mCash', '🏦 Online Banking'].map(m => (
-                <span key={m} className="flex items-center gap-1 bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg opacity-60">
-                  {m}
+              {[
+                { icon: <CreditCard className="w-3.5 h-3.5" />, label: 'Visa' },
+                { icon: <CreditCard className="w-3.5 h-3.5" />, label: 'MasterCard' },
+                { icon: <Smartphone className="w-3.5 h-3.5" />, label: 'eZCash' },
+                { icon: <Smartphone className="w-3.5 h-3.5" />, label: 'mCash' },
+                { icon: <Building2 className="w-3.5 h-3.5" />, label: 'Online Banking' },
+              ].map(m => (
+                <span key={m.label} className="flex items-center gap-1 bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg opacity-60">
+                  {m.icon} {m.label}
                 </span>
               ))}
             </div>
 
             <p className="mt-5 text-xs text-gray-500">
-              💌 Want to be notified when it's live?{' '}
+              <Mail className="w-4 h-4 inline" /> Want to be notified when it's live?{' '}
               <a href="mailto:support@ezycv.org" className="text-blue-400 hover:text-blue-300 underline underline-offset-2">
                 Drop us an email
               </a>
@@ -354,14 +352,14 @@ const SupportUs = () => {
 
           {/* Tip banner */}
           <div className="flex items-start gap-3 bg-blue-500/10 border border-blue-400/20 rounded-2xl px-5 py-4 mb-8">
-            <span className="text-2xl flex-shrink-0">💡</span>
+            <span className="flex-shrink-0"><Lightbulb className="w-6 h-6 text-blue-300" /></span>
             <p className="text-blue-200 text-sm leading-relaxed">
               <strong>Pro tip:</strong> Tap any field to copy it instantly. After your transfer, 
               send a screenshot to{' '}
               <a href="mailto:support@ezycv.org" className="text-blue-400 underline underline-offset-2 hover:text-blue-300">
                 support@ezycv.org
               </a>{' '}
-              so we can thank you personally! 🙏
+              so we can thank you personally! <HeartHandshake className="w-4 h-4 inline text-purple-400" />
             </p>
           </div>
 
@@ -409,9 +407,7 @@ const SupportUs = () => {
                   {/* Bank icon row */}
                   <div className="px-6 pt-5 pb-1 flex items-center gap-3 border-b border-white/5 mb-4">
                     <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
-                      <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                      </svg>
+                      <Building2 className="w-4 h-4 text-gray-300" />
                     </div>
                     <p className="text-gray-400 text-sm">Branch: <span className="text-white font-medium">{acc.branch}</span></p>
                   </div>
@@ -437,9 +433,7 @@ const SupportUs = () => {
             className="mt-8 text-center"
           >
             <div className="inline-flex items-center gap-2 text-gray-400 text-sm bg-white/5 border border-white/10 px-5 py-3 rounded-2xl">
-              <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
+              <ShieldCheck className="w-4 h-4 text-green-400 flex-shrink-0" />
               Your transfer goes <strong className="text-white mx-1">directly</strong> to the developer — zero platform fees, 100% of your support reaches Ezy CV.
             </div>
           </motion.div>
@@ -454,7 +448,7 @@ const SupportUs = () => {
           viewport={{ once: true }}
           className="text-center text-3xl font-bold mb-10"
         >
-          Can't donate? That's okay! 💜
+          Can't donate? That's okay! <Heart className="w-5 h-5 inline text-purple-400" />
         </motion.h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {otherWays.map((w, i) => (
@@ -489,9 +483,9 @@ const SupportUs = () => {
             <motion.div
               animate={{ scale: heartbeat ? 1.3 : 1 }}
               transition={{ duration: 0.2 }}
-              className="text-6xl mb-6 inline-block"
+              className="mb-6 inline-block"
             >
-              🙏
+              <HeartHandshake className="w-14 h-14 text-purple-400" />
             </motion.div>
             <h2 className="text-3xl font-bold text-white mb-4">
               Every rupee is a vote of confidence
@@ -504,15 +498,15 @@ const SupportUs = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
                 href="#bank-transfer"
-                className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-2xl shadow-lg hover:scale-105 transition-all"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-2xl shadow-lg hover:scale-105 transition-all"
               >
-                🏦 Donate via Bank Transfer
+                <Building2 className="w-5 h-5" /> Donate via Bank Transfer
               </a>
               <a
                 href="/cv-builder"
-                className="px-8 py-4 bg-white/10 border border-white/20 text-white font-bold rounded-2xl hover:bg-white/20 transition-all"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-white/10 border border-white/20 text-white font-bold rounded-2xl hover:bg-white/20 transition-all"
               >
-                🎯 Go Build Your CV
+                <Target className="w-5 h-5" /> Go Build Your CV
               </a>
             </div>
           </div>

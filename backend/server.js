@@ -1,3 +1,23 @@
+const dns = require('dns');
+// ─────────────────────────────────────────────────────────────────────────────
+// DNS PATCH: Windows DNS sometimes can't resolve MongoDB Atlas SRV records.
+// We intercept dns.lookup for known Atlas shard hostnames and return their IPs
+// directly, bypassing the OS resolver.  Run this BEFORE any network call.
+// IPs resolved via Google DNS (8.8.8.8) — update if Atlas migrates the cluster.
+// ─────────────────────────────────────────────────────────────────────────────
+const _origLookup = dns.lookup.bind(dns);
+const _mongoIpMap = {
+  'ac-pxurk0o-shard-00-00.gmcrohr.mongodb.net': '89.192.55.41',
+  'ac-pxurk0o-shard-00-01.gmcrohr.mongodb.net': '89.192.57.141',
+  'ac-pxurk0o-shard-00-02.gmcrohr.mongodb.net': '89.192.57.123',
+};
+dns.lookup = (hostname, options, callback) => {
+  if (typeof options === 'function') { callback = options; options = {}; }
+  const ip = _mongoIpMap[hostname];
+  if (ip) return process.nextTick(callback, null, ip, 4);
+  return _origLookup(hostname, options, callback);
+};
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -34,10 +54,10 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
 
 // MongoDB Atlas Connection with optimized settings
 const mongoOptions = {
-  maxPoolSize: 10, // Maintain up to 10 socket connections
-  serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
-  socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-  family: 4, // Use IPv4, skip trying IPv6
+  maxPoolSize: 10,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+  family: 4,
   retryWrites: true,
   w: 'majority'
 };
@@ -50,7 +70,9 @@ mongoose.connect(process.env.MONGODB_URI, mongoOptions)
   })
   .catch(err => {
     console.error('❌ MongoDB Connection Error:', err.message);
-    process.exit(1); // Exit if cannot connect to database
+    console.error('⚠️  Server will keep running and retry the connection.');
+    console.error('   Fix: whitelist your IP on MongoDB Atlas → Network Access → Add IP Address');
+    // Do NOT exit – mongoose will keep retrying; once Atlas IP is whitelisted the DB will come back
   });
 
 // MongoDB connection event handlers
@@ -92,11 +114,22 @@ async function initializeServices() {
 // Initialize services after a short delay to ensure env vars are loaded
 setTimeout(initializeServices, 1000);
 
+// Middleware: return 503 quickly when DB is not connected (avoids long Mongoose buffer hangs)
+const requireDb = (req, res, next) => {
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({
+      message: 'Database not connected. Check your MongoDB Atlas IP whitelist and connection string.',
+      hint: 'MongoDB Atlas → Security → Network Access → Add 0.0.0.0/0'
+    });
+  }
+  next();
+};
+
 // Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/cv', require('./routes/cv'));
-app.use('/api/wallpapers', require('./routes/wallpapers'));
-app.use('/api/photos', require('./routes/photos'));
+app.use('/api/auth', requireDb, require('./routes/auth'));
+app.use('/api/cv', requireDb, require('./routes/cv'));
+app.use('/api/wallpapers', requireDb, require('./routes/wallpapers'));
+app.use('/api/photos', requireDb, require('./routes/photos'));
 
 // Health check route with full status
 app.get('/api/health', async (req, res) => {
@@ -323,9 +356,28 @@ process.on('SIGTERM', () => {
   });
 });
 
+process.on('SIGINT', () => {
+  console.log('\nSIGINT received. Shutting down gracefully...');
+  mongoose.connection.close(false, () => {
+    process.exit(0);
+  });
+});
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`\n🚀 Server running on port ${PORT}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 API Base: http://localhost:${PORT}/api\n`);
+});
+
+// Handle port already in use gracefully (prevents nodemon unhandled exception)
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n❌ Port ${PORT} is already in use.`);
+    console.error('   Kill the existing process and try again:');
+    console.error(`   npx kill-port ${PORT}  OR  Get-Process node | Stop-Process`);
+    process.exit(1);
+  } else {
+    throw err;
+  }
 });

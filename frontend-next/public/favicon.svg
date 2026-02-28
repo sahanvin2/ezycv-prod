@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#6366F1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8B5CF6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#A78BFA;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="100" height="100" rx="22" fill="url(#bgGrad)"/>
+  
+  <!-- Document with folded corner -->
+  <path d="M 28 20 L 65 20 L 75 30 L 75 80 L 28 80 Z" fill="white" opacity="0.98"/>
+  <path d="M 65 20 L 65 30 L 75 30 Z" fill="#E0E7FF" opacity="0.9"/>
+  
+  <!-- Profile circle -->
+  <circle cx="51.5" cy="35" r="7" fill="url(#accentGrad)"/>
+  
+  <!-- Header line (name) -->
+  <rect x="36" y="47" width="32" height="2.5" rx="1.25" fill="url(#accentGrad)" opacity="0.9"/>
+  
+  <!-- Content lines -->
+  <rect x="33" y="55" width="38" height="2" rx="1" fill="#3B82F6" opacity="0.6"/>
+  <rect x="33" y="60" width="38" height="2" rx="1" fill="#3B82F6" opacity="0.5"/>
+  <rect x="33" y="65" width="30" height="2" rx="1" fill="#3B82F6" opacity="0.5"/>
+  <rect x="33" y="70" width="35" height="2" rx="1" fill="#3B82F6" opacity="0.4"/>
+  <rect x="33" y="75" width="28" height="2" rx="1" fill="#3B82F6" opacity="0.4"/>
+</svg>
+

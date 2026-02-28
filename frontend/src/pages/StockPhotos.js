@@ -5,6 +5,11 @@ import { useStatsStore, useAuthStore } from '../store/store';
 import toast from 'react-hot-toast';
 import { triggerSupportPopup } from '../components/SupportPopup';
 import { trackView, trackDownload, trackLike, trackSearch, trackSessionStart, getRecommendedCategoryOrder } from '../utils/userBehavior';
+import { Search, Loader2, Download, Heart, X, Palette, Briefcase, Monitor, Users, Leaf, UtensilsCrossed, Shirt, GraduationCap, AlertTriangle, Camera, Trash2 } from 'lucide-react';
+
+// Normalise API base – strip trailing /api so we can always append /api/<resource>
+const _API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_URL = _API_BASE.replace(/\/api\/?$/, '');
 
 const StockPhotos = () => {
   const { incrementDownloads, incrementStockPhotos } = useStatsStore();
@@ -12,6 +17,7 @@ const StockPhotos = () => {
   const { category: urlCategory } = useParams();
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(urlCategory || 'all');
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -25,16 +31,16 @@ const StockPhotos = () => {
 
   // Category emoji icons — vibrant and recognizable
   const categoryIcons = {
-    all: '🎨',
-    business: '💼',
-    technology: '💻',
-    people: '👥',
-    nature: '🌿',
-    food: '🍽️',
+    all: <Palette className="w-4 h-4" />,
+    business: <Briefcase className="w-4 h-4" />,
+    technology: <Monitor className="w-4 h-4" />,
+    people: <Users className="w-4 h-4" />,
+    nature: <Leaf className="w-4 h-4" />,
+    food: <UtensilsCrossed className="w-4 h-4" />,
     travel: '✈️',
-    fashion: '👗',
-    health: '❤️',
-    education: '🎓'
+    fashion: <Shirt className="w-4 h-4" />,
+    health: <Heart className="w-4 h-4" />,
+    education: <GraduationCap className="w-4 h-4" />
   };
 
   const defaultCategories = [
@@ -60,26 +66,28 @@ const StockPhotos = () => {
   // Fetch photos from API
   const fetchPhotos = async () => {
     setLoading(true);
+    setApiError(false);
     try {
       const params = new URLSearchParams();
       if (selectedCategory !== 'all') params.append('category', selectedCategory);
       if (searchQuery) params.append('search', searchQuery);
       params.append('limit', '50');
       
-      const response = await fetch(
-        `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/photos?${params}`
-      );
+      const response = await fetch(`${API_URL}/api/photos?${params}`);
       
       if (response.ok) {
         const data = await response.json();
         setPhotos(data.photos || []);
       } else {
-        console.error('Failed to fetch photos');
+        const errData = await response.json().catch(() => ({}));
+        console.error('Failed to fetch photos:', response.status, errData);
         setPhotos([]);
+        setApiError(errData.hint || errData.message || `Server error (${response.status})`);
       }
     } catch (error) {
       console.error('Error fetching photos:', error);
       setPhotos([]);
+      setApiError('Cannot reach the server. Make sure the backend is running on port 5000.');
     } finally {
       setLoading(false);
     }
@@ -107,7 +115,7 @@ const StockPhotos = () => {
     
     try {
       // Track download on server (don't wait for it)
-      fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/photos/${photo._id}/download`, {
+      fetch(`${API_URL}/api/photos/${photo._id}/download`, {
         method: 'POST'
       }).catch(() => {});
       
@@ -115,7 +123,7 @@ const StockPhotos = () => {
       
       // Try to download via proxy first (for B2/cloud storage)
       try {
-        const proxyUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/photos/${photo._id}/proxy-download`;
+        const proxyUrl = `${API_URL}/api/photos/${photo._id}/proxy-download`;
         const response = await fetch(proxyUrl);
         
         if (response.ok) {
@@ -200,7 +208,7 @@ const StockPhotos = () => {
     const isLiked = likedPhotos.has(photo._id);
     
     try {
-      await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/photos/${photo._id}/like`, {
+      await fetch(`${API_URL}/api/photos/${photo._id}/like`, {
         method: 'POST'
       });
       
@@ -234,7 +242,7 @@ const StockPhotos = () => {
     
     try {
       const response = await fetch(
-        `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/photos/${photo._id}`,
+        `${API_URL}/api/photos/${photo._id}`,
         {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${token}` }
@@ -321,9 +329,7 @@ const StockPhotos = () => {
                   className="w-full px-6 py-4 rounded-xl text-gray-900 focus:outline-none focus:ring-4 focus:ring-white/30 shadow-lg"
                 />
                 <button className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
+                  <Search className="w-5 h-5" />
                 </button>
               </div>
             </div>
@@ -347,7 +353,7 @@ const StockPhotos = () => {
                     : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-gray-300 hover:shadow-sm'
                 }`}
               >
-                <span className="text-base">{categoryIcons[cat.id] || '🎨'}</span>
+                <span className="text-base flex items-center">{categoryIcons[cat.id] || <Palette className="w-4 h-4" />}</span>
                 <span className="text-sm font-medium">{cat.name}</span>
               </motion.button>
             ))}
@@ -366,9 +372,21 @@ const StockPhotos = () => {
                   <div key={i} className="aspect-[4/3] bg-gray-200 rounded-xl skeleton"></div>
                 ))}
               </div>
+            ) : apiError ? (
+              <div className="text-center py-16">
+                <div className="flex justify-center mb-4"><AlertTriangle className="w-16 h-16 text-yellow-500" /></div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Server unavailable</h3>
+                <p className="text-gray-600 mb-4">{typeof apiError === 'string' ? apiError : 'The backend server is not reachable. Please make sure it is running on port 5000.'}</p>
+                <button
+                  onClick={fetchPhotos}
+                  className="px-6 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors"
+                >
+                  Retry
+                </button>
+              </div>
             ) : photos.length === 0 ? (
               <div className="text-center py-16">
-                <div className="text-6xl mb-4">📷</div>
+                <div className="flex justify-center mb-4"><Camera className="w-16 h-16 text-gray-400" /></div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">No photos found</h3>
                 <p className="text-gray-600">Try adjusting your search or filters</p>
               </div>
@@ -404,14 +422,9 @@ const StockPhotos = () => {
                         title="Download"
                       >
                         {downloadingId === photo._id ? (
-                          <svg className="w-4 h-4 text-cyan-600 animate-spin" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                          </svg>
+                          <Loader2 className="w-4 h-4 text-cyan-600 animate-spin" />
                         ) : (
-                          <svg className="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                          </svg>
+                          <Download className="w-4 h-4 text-cyan-600" />
                         )}
                       </motion.button>
                       
@@ -427,9 +440,7 @@ const StockPhotos = () => {
                         }`}
                         title="Like"
                       >
-                        <svg className="w-4 h-4" fill={likedPhotos.has(photo._id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                        </svg>
+                        <Heart className={`w-4 h-4 ${likedPhotos.has(photo._id) ? 'fill-current' : ''}`} />
                       </motion.button>
                       
                       {/* Delete Button (only for owner) */}
@@ -441,9 +452,7 @@ const StockPhotos = () => {
                           className="w-9 h-9 bg-red-500/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors text-white"
                           title="Delete"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
+                          <Trash2 className="w-4 h-4" />
                         </motion.button>
                       )}
                     </div>
@@ -454,15 +463,11 @@ const StockPhotos = () => {
                         <h3 className="text-white font-semibold mb-1">{photo.title}</h3>
                         <div className="flex items-center gap-3 text-white/80 text-sm">
                           <span className="flex items-center gap-1">
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                            </svg>
+                            <Download className="w-4 h-4" />
                             {formatNumber(photo.downloads || 0)}
                           </span>
                           <span className="flex items-center gap-1">
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
-                            </svg>
+                            <Heart className="w-4 h-4 fill-current" />
                             {formatNumber(photo.likes || 0)}
                           </span>
                         </div>
@@ -554,9 +559,7 @@ const StockPhotos = () => {
                   onClick={() => setSelectedPhoto(null)}
                   className="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <X className="w-6 h-6" />
                 </button>
               </div>
 
@@ -568,9 +571,7 @@ const StockPhotos = () => {
                     <div className="flex items-center gap-4 text-gray-600">
                       <span>{selectedPhoto.resolution.width} x {selectedPhoto.resolution.height}</span>
                       <span className="flex items-center gap-1">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
+                        <Download className="w-4 h-4" />
                         {formatNumber(selectedPhoto.downloads)} downloads
                       </span>
                     </div>
@@ -603,9 +604,7 @@ const StockPhotos = () => {
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    <svg className="w-5 h-5" fill={likedPhotos.has(selectedPhoto._id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
+                    <Heart className={`w-5 h-5 ${likedPhotos.has(selectedPhoto._id) ? 'fill-current' : ''}`} />
                     {likedPhotos.has(selectedPhoto._id) ? 'Liked' : 'Like'}
                   </button>
                   
@@ -615,9 +614,7 @@ const StockPhotos = () => {
                       onClick={(e) => handleDelete(e, selectedPhoto)}
                       className="px-6 py-3 bg-red-100 text-red-600 rounded-xl font-semibold hover:bg-red-200 transition-all flex items-center gap-2"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
+                      <Trash2 className="w-5 h-5" />
                       Delete
                     </button>
                   )}
@@ -629,14 +626,9 @@ const StockPhotos = () => {
                   className="w-full py-4 bg-cyan-600 text-white font-semibold rounded-xl hover:bg-cyan-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
                 >
                   {downloadingId === selectedPhoto._id ? (
-                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
+                    <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
+                    <Download className="w-5 h-5" />
                   )}
                   {downloadingId === selectedPhoto._id ? 'Downloading...' : 'Download Free'}
                 </button>

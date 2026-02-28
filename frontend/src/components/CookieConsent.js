@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SlidersHorizontal, ChevronRight, Settings } from 'lucide-react';
 
 const CookieConsent = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -59,9 +60,7 @@ const CookieConsent = () => {
                   transition={{ delay: 0.2, type: "spring" }}
                   className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg"
                 >
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                  </svg>
+                  <SlidersHorizontal className="w-6 h-6 text-white" />
                 </motion.div>
 
                 <div className="text-center w-full">
@@ -82,9 +81,7 @@ const CookieConsent = () => {
                     className="inline-flex items-center justify-center text-[11px] font-medium text-blue-600 hover:text-blue-700 transition-colors"
                   >
                     Learn more about Cookie Policy
-                    <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
+                    <ChevronRight className="w-3 h-3 ml-1" />
                   </a>
                 </div>
               </div>
@@ -136,10 +133,7 @@ const CookieConsent = () => {
                   transition={{ delay: 0.15, type: "spring", stiffness: 200 }}
                   className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-200"
                 >
-                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
+                  <Settings className="w-7 h-7 text-white" />
                 </motion.div>
 
                 {/* Title & description */}
@@ -160,14 +154,9 @@ const CookieConsent = () => {
                 className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors group mb-6"
               >
                 Learn more about our Cookie Policy
-                <svg 
+                <ChevronRight 
                   className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+                />
               </a>
 
               {/* Buttons row */}

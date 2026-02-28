@@ -3,6 +3,7 @@ import { Navigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuthStore, useStatsStore } from '../store/store';
 import toast from 'react-hot-toast';
+import { ChevronLeft, User, ChevronRight, Bell, Settings as SettingsIcon, Database, AlertTriangle } from 'lucide-react';
 
 const Settings = () => {
   const { user, isAuthenticated, logout } = useAuthStore();
@@ -77,9 +78,7 @@ const Settings = () => {
             to="/dashboard" 
             className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-4"
           >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            <ChevronLeft className="w-5 h-5 mr-2" />
             Back to Dashboard
           </Link>
           <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
@@ -94,9 +93,7 @@ const Settings = () => {
           className="bg-white rounded-2xl shadow-lg p-6 mb-6"
         >
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
+            <User className="w-5 h-5 text-blue-600" />
             Account Information
           </h3>
           <div className="space-y-3">
@@ -120,9 +117,7 @@ const Settings = () => {
             className="mt-4 inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
           >
             Edit Profile
-            <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+            <ChevronRight className="w-4 h-4 ml-1" />
           </Link>
         </motion.div>
 
@@ -134,9 +129,7 @@ const Settings = () => {
           className="bg-white rounded-2xl shadow-lg p-6 mb-6"
         >
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
+            <Bell className="w-5 h-5 text-blue-600" />
             Notifications
           </h3>
           <SettingToggle
@@ -161,10 +154,7 @@ const Settings = () => {
           className="bg-white rounded-2xl shadow-lg p-6 mb-6"
         >
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
+            <SettingsIcon className="w-5 h-5 text-blue-600" />
             Preferences
           </h3>
           <SettingToggle
@@ -189,9 +179,7 @@ const Settings = () => {
           className="bg-white rounded-2xl shadow-lg p-6 mb-6"
         >
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
-            </svg>
+            <Database className="w-5 h-5 text-blue-600" />
             Data Management
           </h3>
           <div className="space-y-4">
@@ -230,9 +218,7 @@ const Settings = () => {
           className="bg-white rounded-2xl shadow-lg p-6 border-2 border-red-100"
         >
           <h3 className="text-lg font-semibold text-red-600 mb-4 flex items-center gap-2">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
+            <AlertTriangle className="w-5 h-5" />
             Danger Zone
           </h3>
           <div className="flex items-center justify-between py-3">

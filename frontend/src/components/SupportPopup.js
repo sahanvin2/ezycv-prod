@@ -1,6 +1,7 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { X } from 'lucide-react';
 
 const STORAGE_KEY = 'ezycv_support_popup_seen';
 const VISITOR_DELAY_MS = 18000;
@@ -89,9 +90,7 @@ const SupportPopup = () => {
                 onClick={dismiss}
                 className="absolute top-4 right-4 w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-gray-500 hover:text-gray-300 transition-colors"
               >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X className="w-3.5 h-3.5" />
               </button>
               <motion.div
                 animate={{ scale: [1, 1.09, 1] }}

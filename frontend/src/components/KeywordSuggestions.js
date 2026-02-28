@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown, Plus, Lightbulb } from 'lucide-react';
 
 const KeywordSuggestions = ({ jobTitle, currentSkills = [], onAddKeyword }) => {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -118,9 +119,7 @@ const KeywordSuggestions = ({ jobTitle, currentSkills = [], onAddKeyword }) => {
           animate={{ rotate: isExpanded ? 180 : 0 }}
           transition={{ duration: 0.3 }}
         >
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
+          <ChevronDown className="w-6 h-6 text-white" />
         </motion.div>
       </div>
 
@@ -135,7 +134,7 @@ const KeywordSuggestions = ({ jobTitle, currentSkills = [], onAddKeyword }) => {
             <div className="p-4">
               {/* Info Banner */}
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 flex items-start gap-3">
-                <span className="text-2xl">💡</span>
+                <span className="text-2xl"><Lightbulb className="w-6 h-6 text-amber-600" /></span>
                 <div className="flex-1">
                   <p className="text-amber-900 text-sm font-medium">ATS (Applicant Tracking Systems) scan CVs for keywords</p>
                   <p className="text-amber-700 text-xs mt-1">Add relevant keywords from below to increase your chances of getting noticed!</p>
@@ -172,9 +171,7 @@ const KeywordSuggestions = ({ jobTitle, currentSkills = [], onAddKeyword }) => {
                     className="px-4 py-2 bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-400 rounded-full text-sm font-medium text-gray-700 hover:text-blue-600 transition-all shadow-sm hover:shadow-md flex items-center gap-2 group"
                   >
                     <span>{keyword}</span>
-                    <svg className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
+                    <Plus className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </motion.button>
                 ))}
               </div>

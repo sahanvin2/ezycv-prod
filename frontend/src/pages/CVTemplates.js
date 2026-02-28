@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { LargeBannerAd, NativeBannerAd } from '../components/Ads/AdComponents';
 import { useStatsStore } from '../store/store';
+import { User, ArrowRight, BookOpen, Briefcase, Palette, Sparkles, ScrollText, Star, Camera, Ruler, CheckCircle } from 'lucide-react';
 
 const CVTemplates = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -402,11 +403,11 @@ const CVTemplates = () => {
   ];
 
   const categories = [
-    { id: 'all', name: 'All Templates', icon: '📚', count: templates.length },
-    { id: 'professional', name: 'Professional', icon: '💼', count: templates.filter(t => t.category === 'professional').length },
-    { id: 'creative', name: 'Creative', icon: '🎨', count: templates.filter(t => t.category === 'creative').length },
-    { id: 'modern', name: 'Modern', icon: '✨', count: templates.filter(t => t.category === 'modern').length },
-    { id: 'traditional', name: 'Traditional', icon: '📜', count: templates.filter(t => t.category === 'traditional').length }
+    { id: 'all', name: 'All Templates', icon: <BookOpen className="w-4 h-4" />, count: templates.length },
+    { id: 'professional', name: 'Professional', icon: <Briefcase className="w-4 h-4" />, count: templates.filter(t => t.category === 'professional').length },
+    { id: 'creative', name: 'Creative', icon: <Palette className="w-4 h-4" />, count: templates.filter(t => t.category === 'creative').length },
+    { id: 'modern', name: 'Modern', icon: <Sparkles className="w-4 h-4" />, count: templates.filter(t => t.category === 'modern').length },
+    { id: 'traditional', name: 'Traditional', icon: <ScrollText className="w-4 h-4" />, count: templates.filter(t => t.category === 'traditional').length }
   ];
 
   const filteredTemplates = selectedCategory === 'all' 
@@ -560,8 +561,8 @@ const CVTemplates = () => {
                   {/* Badges */}
                   <div className="absolute top-4 right-4 flex flex-col gap-2">
                     {template.popular && (
-                      <span className="bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-                        ⭐ POPULAR
+                      <span className="bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold shadow-lg inline-flex items-center gap-1">
+                        <Star className="w-3 h-3 fill-current" /> POPULAR
                       </span>
                     )}
                     <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-white text-xs font-medium">
@@ -572,9 +573,7 @@ const CVTemplates = () => {
                   {/* Photo indicator */}
                   {template.hasPhoto && (
                     <div className="absolute bottom-4 left-4 bg-white/90 px-2 py-1 rounded text-xs font-medium text-gray-700 flex items-center gap-1">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
+                      <User className="w-3 h-3" />
                       Photo
                     </div>
                   )}
@@ -654,10 +653,10 @@ const CVTemplates = () => {
           </h2>
           <div className="grid md:grid-cols-4 gap-8">
             {[
-              { icon: '📸', title: 'Photo Support', desc: 'Most templates support profile photos' },
-              { icon: '📐', title: 'Multiple Layouts', desc: 'Single & two-column options' },
-              { icon: '🎨', title: 'Customizable', desc: 'Change colors to match your style' },
-              { icon: '✅', title: 'ATS Friendly', desc: 'Optimized for applicant tracking' }
+              { icon: <Camera className="w-5 h-5" />, title: 'Photo Support', desc: 'Most templates support profile photos' },
+              { icon: <Ruler className="w-5 h-5" />, title: 'Multiple Layouts', desc: 'Single & two-column options' },
+              { icon: <Palette className="w-5 h-5" />, title: 'Customizable', desc: 'Change colors to match your style' },
+              { icon: <CheckCircle className="w-5 h-5" />, title: 'ATS Friendly', desc: 'Optimized for applicant tracking' }
             ].map((feature, index) => (
               <motion.div
                 key={feature.title}
@@ -688,9 +687,7 @@ const CVTemplates = () => {
             className="inline-flex items-center gap-2 px-8 py-4 bg-white text-blue-600 font-bold rounded-xl hover:bg-blue-50 transition-colors shadow-lg"
           >
             Start Building Now
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
+            <ArrowRight className="w-5 h-5" />
           </Link>
         </div>
       </section>

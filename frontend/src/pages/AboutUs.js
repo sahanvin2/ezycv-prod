@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { ArrowRight, Target, Lightbulb, Handshake, Globe, Rocket } from 'lucide-react';
 
 const AboutUs = () => {
   const team = [
@@ -18,22 +19,22 @@ const AboutUs = () => {
 
   const values = [
     {
-      icon: '🎯',
+      icon: <Target className="w-6 h-6 text-blue-600" />,
       title: 'Mission-Driven',
       description: 'We believe everyone deserves a professional CV that showcases their potential.'
     },
     {
-      icon: '💡',
+      icon: <Lightbulb className="w-6 h-6 text-purple-600" />,
       title: 'Innovation',
       description: 'Constantly improving our tools to provide the best user experience.'
     },
     {
-      icon: '🤝',
+      icon: <Handshake className="w-6 h-6 text-pink-600" />,
       title: 'User First',
       description: 'Every decision we make puts our users\' needs at the forefront.'
     },
     {
-      icon: '🌍',
+      icon: <Globe className="w-6 h-6 text-green-600" />,
       title: 'Accessibility',
       description: 'Making professional CV creation free and accessible to everyone worldwide.'
     }
@@ -82,11 +83,11 @@ const AboutUs = () => {
               </p>
               <div className="flex gap-8">
                 <div>
-                  <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">50K+</div>
+                  <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">500+</div>
                   <div className="text-gray-600">CVs Created</div>
                 </div>
                 <div>
-                  <div className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">150+</div>
+                  <div className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">20+</div>
                   <div className="text-gray-600">Countries</div>
                 </div>
                 <div>
@@ -187,7 +188,7 @@ const AboutUs = () => {
                         />
                         {/* Badge */}
                         <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full shadow-xl border-2 border-white/50">
-                          <span className="text-white font-bold text-sm whitespace-nowrap">🚀 Founder & CEO</span>
+                          <span className="text-white font-bold text-sm whitespace-nowrap inline-flex items-center gap-1"><Rocket className="w-4 h-4" /> Founder & CEO</span>
                         </div>
                       </div>
                     </div>
@@ -283,9 +284,7 @@ const AboutUs = () => {
             className="inline-flex items-center gap-2 px-8 py-4 bg-white text-blue-600 font-semibold rounded-xl hover:bg-blue-50 transition-colors shadow-lg"
           >
             Start Building Free
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
+            <ArrowRight className="w-5 h-5" />
           </Link>
         </div>
       </section>

@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Loader2, Download, Heart, ChevronLeft, ChevronRight, X, Trash2,
+  Palette, Leaf, Sparkles, Bug, Landmark, Rocket, Gamepad2, Moon, Rainbow,
+  Smartphone, Monitor, AlertTriangle, Image as ImageIcon,
+  TrendingUp, LayoutGrid, Maximize2, Square
+} from 'lucide-react';
 import { useStatsStore, useAuthStore } from '../store/store';
 import toast from 'react-hot-toast';
 import { triggerSupportPopup } from '../components/SupportPopup';
@@ -13,26 +19,8 @@ import {
   getPersonalizedLabel,
   updateEngagementStreak,
   trackInteraction,
-  getEngagementPrompt,
-  getTimeBasedRecommendation
+  getEngagementPrompt
 } from '../utils/userBehavior';
-
-// Fisher-Yates shuffle with seeded random for consistent per-session shuffling
-const seededShuffle = (array, seed) => {
-  const shuffled = [...array];
-  let currentSeed = seed;
-  
-  const seededRandom = () => {
-    const x = Math.sin(currentSeed++) * 10000;
-    return x - Math.floor(x);
-  };
-  
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(seededRandom() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-};
 
 // Get or create session seed for consistent shuffling during same session
 const getSessionSeed = () => {
@@ -44,7 +32,9 @@ const getSessionSeed = () => {
   return parseInt(seed);
 };
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+// Normalise API base – strip trailing /api so we can always append /api/<resource>
+const _API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_URL = _API_BASE.replace(/\/api\/?$/, '');
 
 const Wallpapers = () => {
   const { category: urlCategory } = useParams();
@@ -64,6 +54,9 @@ const Wallpapers = () => {
   const [totalCount, setTotalCount] = useState(0);
   const ITEMS_PER_PAGE = 24;
   
+  // API error state – distinguishes network failure from empty results
+  const [apiError, setApiError] = useState(false);
+
   // Shuffle seed for consistent randomization per session
   const shuffleSeed = useRef(getSessionSeed());
 
@@ -120,28 +113,20 @@ const Wallpapers = () => {
     return () => clearTimeout(promptTimer);
   }, []);
   
-  // Refresh shuffle - gives users fresh content order
-  const refreshShuffle = () => {
-    const newSeed = Date.now().toString();
-    sessionStorage.setItem('wallpaper_shuffle_seed', newSeed);
-    shuffleSeed.current = parseInt(newSeed);
-    // Force re-render by triggering a state change
-    setCurrentPage(prev => prev);
-    toast.success('Fresh order! Enjoy discovering!', { icon: '🔄' });
-  };
 
-  // Category emoji icons — vibrant and instantly recognizable
+
+  // Category icons — Lucide React components
   const categoryIcons = {
-    all: '🎨',
-    nature: '🌿',
-    abstract: '🔮',
-    animals: '🦋',
-    architecture: '🏛️',
-    space: '🚀',
-    gaming: '🎮',
-    minimalist: '◻️',
-    dark: '🌙',
-    gradient: '🌈'
+    all: <Palette className="w-4 h-4" />,
+    nature: <Leaf className="w-4 h-4" />,
+    abstract: <Sparkles className="w-4 h-4" />,
+    animals: <Bug className="w-4 h-4" />,
+    architecture: <Landmark className="w-4 h-4" />,
+    space: <Rocket className="w-4 h-4" />,
+    gaming: <Gamepad2 className="w-4 h-4" />,
+    minimalist: <Square className="w-4 h-4" />,
+    dark: <Moon className="w-4 h-4" />,
+    gradient: <Rainbow className="w-4 h-4" />
   };
 
   const defaultCategories = [
@@ -165,6 +150,7 @@ const Wallpapers = () => {
   );
 
   // Personalized sort label
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const sortLabel = useMemo(() => getPersonalizedLabel(), [wallpapers.length]);
 
   const deviceTypes = [
@@ -176,6 +162,7 @@ const Wallpapers = () => {
   // Fetch wallpapers from API
   const fetchWallpapers = useCallback(async (page = currentPage) => {
     setLoading(true);
+    setApiError(false);
     try {
       const params = new URLSearchParams();
       if (selectedCategory !== 'all') params.append('category', selectedCategory);
@@ -190,16 +177,21 @@ const Wallpapers = () => {
         const data = await response.json();
         setWallpapers(data.wallpapers || []);
         if (data.pagination) {
-          setTotalPages(data.pagination.pages);
-          setTotalCount(data.pagination.total);
+          setTotalPages(data.pagination.pages || 1);
+          setTotalCount(data.pagination.total || 0);
+        } else {
+          setTotalCount((data.wallpapers || []).length);
         }
       } else {
-        console.error('Failed to fetch wallpapers');
+        const errData = await response.json().catch(() => ({}));
+        console.error('Failed to fetch wallpapers:', response.status, errData);
         setWallpapers([]);
+        setApiError(errData.hint || errData.message || `Server error (${response.status})`);
       }
     } catch (error) {
       console.error('Error fetching wallpapers:', error);
       setWallpapers([]);
+      setApiError('Cannot reach the server. Make sure the backend is running on port 5000.');
     } finally {
       setLoading(false);
     }
@@ -500,7 +492,7 @@ const Wallpapers = () => {
                     : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-gray-300 hover:shadow-sm'
                 }`}
               >
-                <span className="text-base">{categoryIcons[cat.id] || '🎨'}</span>
+                <span className="flex items-center">{categoryIcons[cat.id] || <Palette className="w-4 h-4" />}</span>
                 <span className="text-sm font-medium">{cat.name}</span>
               </motion.button>
             ))}
@@ -519,13 +511,11 @@ const Wallpapers = () => {
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  <span>{device.id === 'all' ? '📱💻' : device.id === 'desktop' ? '💻' : '📱'}</span>
+                  <span className="flex items-center gap-0.5">{device.id === 'all' ? <><Smartphone className="w-4 h-4" /><Monitor className="w-4 h-4" /></> : device.id === 'desktop' ? <Monitor className="w-4 h-4" /> : <Smartphone className="w-4 h-4" />}</span>
                   {device.name}
                 </button>
               ))}
             </div>
-            
-
           </div>
         </div>
       </div>
@@ -559,9 +549,7 @@ const Wallpapers = () => {
               Showing <span className="font-semibold text-gray-900">{((currentPage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, totalCount)}</span> of <span className="font-semibold text-gray-900">{totalCount.toLocaleString()}</span> wallpapers
             </p>
             <div className="flex items-center gap-2 text-xs md:text-sm text-purple-600 font-medium">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-              </svg>
+              <TrendingUp className="w-4 h-4" />
               {sortLabel}
             </div>
           </div>
@@ -577,11 +565,23 @@ const Wallpapers = () => {
               ></div>
             ))}
           </div>
+        ) : apiError ? (
+          <div className="text-center py-16">
+            <div className="flex justify-center mb-4"><AlertTriangle className="w-16 h-16 text-amber-500" /></div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Server unavailable</h3>
+            <p className="text-gray-600 mb-4">The backend server is not reachable. Please make sure it is running on port 5000.</p>
+            <button
+              onClick={() => fetchWallpapers(currentPage)}
+              className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
         ) : displayWallpapers.length === 0 ? (
           <div className="text-center py-16">
-            <div className="text-6xl mb-4">🖼️</div>
+            <div className="flex justify-center mb-4"><ImageIcon className="w-16 h-16 text-gray-400" /></div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">No wallpapers found</h3>
-            <p className="text-gray-600">Try adjusting your filters</p>
+            <p className="text-gray-600">Try adjusting your filters or come back later</p>
           </div>
         ) : (
           <div className="columns-2 md:columns-3 lg:columns-4 gap-3 md:gap-4 space-y-3 md:space-y-4">
@@ -616,14 +616,9 @@ const Wallpapers = () => {
                     title="Download"
                   >
                     {downloadingId === wallpaper._id ? (
-                      <svg className="w-5 h-5 text-purple-600 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
+                      <Loader2 className="w-5 h-5 text-purple-600 animate-spin" />
                     ) : (
-                      <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
+                      <Download className="w-5 h-5 text-purple-600" />
                     )}
                   </motion.button>
                   
@@ -639,9 +634,7 @@ const Wallpapers = () => {
                     }`}
                     title="Like"
                   >
-                    <svg className="w-5 h-5" fill={likedWallpapers.has(wallpaper._id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
+                    <Heart className={`w-5 h-5 ${likedWallpapers.has(wallpaper._id) ? 'fill-current' : ''}`} />
                   </motion.button>
                   
                   {/* Delete Button (only for owner) */}
@@ -653,9 +646,7 @@ const Wallpapers = () => {
                       className="w-10 h-10 bg-red-500/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors text-white"
                       title="Delete"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
+                      <Trash2 className="w-5 h-5" />
                     </motion.button>
                   )}
                 </div>
@@ -668,15 +659,11 @@ const Wallpapers = () => {
                       <span>{wallpaper.resolution?.width || 1920}x{wallpaper.resolution?.height || 1080}</span>
                       <div className="flex items-center gap-3">
                         <span className="flex items-center gap-1">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                          </svg>
+                          <Download className="w-4 h-4" />
                           {formatNumber(wallpaper.downloads || 0)}
                         </span>
                         <span className="flex items-center gap-1">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
-                          </svg>
+                          <Heart className="w-4 h-4 fill-current" />
                           {formatNumber(wallpaper.likes || 0)}
                         </span>
                       </div>
@@ -708,9 +695,7 @@ const Wallpapers = () => {
               disabled={currentPage === 1}
               className="flex items-center gap-1 px-2.5 md:px-4 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-white text-gray-700 hover:bg-gray-100 border border-gray-200 shadow-sm"
             >
-              <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
+              <ChevronLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
               <span className="hidden sm:inline">Prev</span>
             </button>
 
@@ -742,9 +727,7 @@ const Wallpapers = () => {
               className="flex items-center gap-1 px-2.5 md:px-4 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-white text-gray-700 hover:bg-gray-100 border border-gray-200 shadow-sm"
             >
               <span className="hidden sm:inline">Next</span>
-              <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
+              <ChevronRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
             </button>
           </div>
         )}
@@ -795,9 +778,7 @@ const Wallpapers = () => {
                   onClick={() => setSelectedWallpaper(null)}
                   className="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <X className="w-6 h-6" />
                 </button>
               </div>
 
@@ -808,21 +789,15 @@ const Wallpapers = () => {
                     <h2 className="text-lg md:text-2xl font-bold text-gray-900 mb-1.5 md:mb-2">{selectedWallpaper.title}</h2>
                     <div className="flex items-center gap-2 md:gap-4 text-gray-600 flex-wrap text-xs md:text-sm">
                       <span className="flex items-center gap-1">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                        </svg>
+                        <Maximize2 className="w-4 h-4" />
                         {selectedWallpaper.resolution?.width || 1920} x {selectedWallpaper.resolution?.height || 1080}
                       </span>
                       <span className="flex items-center gap-1">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
+                        <Download className="w-4 h-4" />
                         {formatNumber(selectedWallpaper.downloads || 0)} downloads
                       </span>
                       <span className="flex items-center gap-1">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
-                        </svg>
+                        <Heart className="w-4 h-4 fill-current" />
                         {formatNumber(selectedWallpaper.likes || 0)} likes
                       </span>
                       <span className="capitalize text-sm bg-gray-100 px-2 py-0.5 rounded-md">{selectedWallpaper.category}</span>
@@ -833,7 +808,7 @@ const Wallpapers = () => {
                       ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white' 
                       : 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
                   }`}>
-                    {selectedWallpaper.deviceType === 'mobile' ? '📱 Mobile' : '🖥️ Desktop'}
+                    {selectedWallpaper.deviceType === 'mobile' ? <><Smartphone className="w-4 h-4 inline" /> Mobile</> : <><Monitor className="w-4 h-4 inline" /> Desktop</>}
                   </span>
                 </div>
 
@@ -848,9 +823,7 @@ const Wallpapers = () => {
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    <svg className="w-5 h-5" fill={likedWallpapers.has(selectedWallpaper._id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
+                    <Heart className={`w-5 h-5 ${likedWallpapers.has(selectedWallpaper._id) ? 'fill-current' : ''}`} />
                     {likedWallpapers.has(selectedWallpaper._id) ? 'Liked' : 'Like'}
                   </button>
                   
@@ -860,9 +833,7 @@ const Wallpapers = () => {
                       onClick={(e) => handleDelete(e, selectedWallpaper)}
                       className="px-6 py-3 bg-red-100 text-red-600 rounded-xl font-semibold hover:bg-red-200 transition-all flex items-center gap-2"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
+                      <Trash2 className="w-5 h-5" />
                       Delete
                     </button>
                   )}
@@ -875,14 +846,9 @@ const Wallpapers = () => {
                   className="w-full py-4 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 text-white font-semibold rounded-xl hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-70"
                 >
                   {downloadingId === selectedWallpaper._id ? (
-                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
+                    <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
+                    <Download className="w-5 h-5" />
                   )}
                   {downloadingId === selectedWallpaper._id ? 'Downloading...' : 'Download Full 5K Wallpaper'}
                 </button>
@@ -890,9 +856,7 @@ const Wallpapers = () => {
                 {/* Related Wallpapers Section */}
                 <div className="mt-6 md:mt-8 border-t pt-4 md:pt-6">
                   <h3 className="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4 flex items-center gap-2">
-                    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                    </svg>
+                    <LayoutGrid className="w-5 h-5 text-purple-600" />
                     You May Also Like
                   </h3>
                   

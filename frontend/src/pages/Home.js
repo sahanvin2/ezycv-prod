@@ -2,8 +2,11 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useStatsStore } from '../store/store';
+import { FileText, Image, Camera, ArrowRight, Check, FileDown, ImageIcon, CameraIcon, Download, CheckCircle, Lock, Lightbulb, Star } from 'lucide-react';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+// Strip trailing /api if present so we can always append /api/<resource>
+const _API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_URL = _API_BASE.replace(/\/api\/?$/, '');
 
 const Home = () => {
   // Subscribe directly to individual stat values for granular reactivity
@@ -56,34 +59,21 @@ const Home = () => {
   };
   const features = [
     {
-      icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      ),
+      icon: <FileText className="w-8 h-8" />,
       title: 'Free CV Builder',
       description: 'Create professional CVs with our easy-to-use builder. Multiple templates available.',
       link: '/cv-builder',
       color: 'from-blue-500 to-blue-600'
     },
     {
-      icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-      ),
+      icon: <Image className="w-8 h-8" />,
       title: 'HD Wallpapers',
       description: 'Download stunning wallpapers for desktop and mobile devices.',
       link: '/wallpapers',
       color: 'from-purple-500 to-purple-600'
     },
     {
-      icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      ),
+      icon: <Camera className="w-8 h-8" />,
       title: 'Stock Photos',
       description: 'Free high-quality stock photos for personal and commercial use.',
       link: '/stock-photos',
@@ -92,10 +82,10 @@ const Home = () => {
   ];
 
   const liveStats = [
-    { number: displayStats.cvsCreated, label: 'CVs Created', icon: '📄', color: 'from-blue-500 to-indigo-600' },
-    { number: displayStats.totalDownloads, label: 'Downloads', icon: '⬇️', color: 'from-green-500 to-emerald-600' },
-    { number: displayStats.wallpapers, label: 'Wallpapers', icon: '🖼️', color: 'from-purple-500 to-pink-600' },
-    { number: displayStats.stockPhotos, label: 'Stock Photos', icon: '📷', color: 'from-orange-500 to-red-600' }
+    { number: displayStats.cvsCreated, label: 'CVs Created', icon: <FileText className="w-7 h-7 md:w-8 md:h-8" />, color: 'from-blue-500 to-indigo-600' },
+    { number: displayStats.totalDownloads, label: 'Downloads', icon: <FileDown className="w-7 h-7 md:w-8 md:h-8" />, color: 'from-green-500 to-emerald-600' },
+    { number: displayStats.wallpapers, label: 'Wallpapers', icon: <ImageIcon className="w-7 h-7 md:w-8 md:h-8" />, color: 'from-purple-500 to-pink-600' },
+    { number: displayStats.stockPhotos, label: 'Stock Photos', icon: <CameraIcon className="w-7 h-7 md:w-8 md:h-8" />, color: 'from-orange-500 to-red-600' }
   ];
 
   // Enhanced template previews with unique designs
@@ -511,12 +501,7 @@ const Home = () => {
                     className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-blue-600 font-semibold rounded-xl hover:bg-blue-50 transition-all duration-300 shadow-lg hover:shadow-xl group"
                   >
                     Create CV Now 
-                    <motion.span
-                      animate={{ x: [0, 5, 0] }}
-                      transition={{ duration: 1, repeat: Infinity }}
-                    >
-                      →
-                    </motion.span>
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </Link>
                 </motion.div>
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -617,9 +602,7 @@ const Home = () => {
                     animate={{ scale: 1, rotate: 0 }}
                     transition={{ delay: 1.5, type: "spring", stiffness: 200 }}
                   >
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
+                    <Check className="w-5 h-5 text-white" strokeWidth={3} />
                   </motion.div>
                 </motion.div>
               </div>
@@ -665,7 +648,7 @@ const Home = () => {
                 <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-0 group-hover:opacity-5 transition-opacity`}></div>
                 
                 <div className="relative z-10 text-center">
-                  <div className="text-2xl md:text-3xl mb-1 md:mb-2">{stat.icon}</div>
+                  <div className={`text-2xl md:text-3xl mb-1 md:mb-2 inline-flex bg-gradient-to-r ${stat.color} bg-clip-text`}>{stat.icon}</div>
                   <div 
                     className={`text-2xl md:text-4xl font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent mb-0.5 md:mb-1`}
                   >
@@ -727,9 +710,7 @@ const Home = () => {
                   </p>
                   <div className="mt-3 md:mt-4 flex items-center text-sm font-medium text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
                     Explore
-                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                    </svg>
+                    <ArrowRight className="w-4 h-4 ml-1" />
                   </div>
                 </Link>
               </motion.div>
@@ -765,9 +746,7 @@ const Home = () => {
               className="inline-flex items-center gap-2 px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 text-white font-semibold rounded-xl hover:from-blue-700 hover:via-purple-700 hover:to-pink-600 transition-all shadow-lg hover:shadow-xl text-sm md:text-base"
             >
               View All Templates
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
+              <ArrowRight className="w-5 h-5" />
             </Link>
           </div>
         </div>
@@ -854,9 +833,7 @@ const Home = () => {
                   {/* Download hint */}
                   <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <div className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
-                      <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
+                      <Download className="w-4 h-4 text-gray-700" />
                     </div>
                   </div>
                 </Link>
@@ -870,9 +847,7 @@ const Home = () => {
               className="inline-flex items-center gap-2 px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 text-white font-semibold rounded-xl hover:from-purple-700 hover:via-pink-600 hover:to-orange-600 transition-all shadow-lg hover:shadow-xl text-sm md:text-base"
             >
               Explore All Wallpapers
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
+              <ArrowRight className="w-5 h-5" />
             </Link>
           </div>
         </div>
@@ -938,9 +913,7 @@ const Home = () => {
                 {/* Stars */}
                 <div className="flex gap-1 mb-4">
                   {[...Array(testimonial.rating)].map((_, i) => (
-                    <svg key={i} className="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                      <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
-                    </svg>
+                    <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
                   ))}
                 </div>
 
@@ -971,27 +944,19 @@ const Home = () => {
           >
             <div className="inline-flex flex-wrap items-center justify-center gap-4 md:gap-8 px-6 md:px-8 py-4 md:py-6 bg-white rounded-2xl shadow-lg">
               <div className="flex items-center gap-2">
-                <svg className="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
+                <CheckCircle className="w-6 h-6 text-green-500" />
                 <span className="font-semibold text-gray-700">100% Free</span>
               </div>
               <div className="flex items-center gap-2">
-                <svg className="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                </svg>
+                <Lock className="w-6 h-6 text-blue-500" />
                 <span className="font-semibold text-gray-700">Privacy Focused</span>
               </div>
               <div className="flex items-center gap-2">
-                <svg className="w-6 h-6 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.476.859h4.002z" />
-                </svg>
+                <Lightbulb className="w-6 h-6 text-purple-500" />
                 <span className="font-semibold text-gray-700">Easy to Use</span>
               </div>
               <div className="flex items-center gap-2">
-                <svg className="w-6 h-6 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
+                <Star className="w-6 h-6 text-yellow-500" />
                 <span className="font-semibold text-gray-700">4.9/5 Rating</span>
               </div>
             </div>
@@ -1017,9 +982,7 @@ const Home = () => {
               className="inline-flex items-center gap-2 px-8 md:px-10 py-4 md:py-5 bg-white text-blue-600 font-bold rounded-xl hover:bg-blue-50 transition-all duration-300 shadow-lg hover:shadow-xl text-base md:text-lg"
             >
               Start Building Now
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
+              <ArrowRight className="w-6 h-6" />
             </Link>
           </motion.div>
         </div>

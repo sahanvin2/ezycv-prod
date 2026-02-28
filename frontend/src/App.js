@@ -31,6 +31,8 @@ const Settings = lazy(() => import('./pages/Settings'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const PhoneLogin = lazy(() => import('./pages/PhoneLogin'));
 const SupportUs = lazy(() => import('./pages/SupportUs'));
+const Blog = lazy(() => import('./pages/Blog'));
+const BlogPost = lazy(() => import('./pages/BlogPost'));
 
 // Loading fallback component - Fast and attractive
 const PageLoader = () => (
@@ -70,7 +72,7 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <Router>
+      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <ScrollToTop />
         <div className="min-h-screen flex flex-col bg-gray-50">
           <Navbar />
@@ -99,6 +101,8 @@ function App() {
                 <Route path="/edit-profile" element={<EditProfile />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/support-us" element={<SupportUs />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/blog/:slug" element={<BlogPost />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

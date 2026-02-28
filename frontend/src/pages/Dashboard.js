@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { FilePlus, LayoutGrid, ImageIcon, Camera, FileText, Download, Plus, ChevronRight, User, Settings, LogOut, CheckCircle, BarChart3, Zap, Lightbulb } from 'lucide-react';
 import { useAuthStore, useCVStore, useStatsStore } from '../store/store';
 import { NativeBannerAd, LargeBannerAd } from '../components/Ads/AdComponents';
 
@@ -17,11 +18,7 @@ const Dashboard = () => {
     {
       title: 'Create New CV',
       description: 'Build your perfect CV in minutes',
-      icon: (
-        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      ),
+      icon: <FilePlus className="w-7 h-7" />,
       link: '/cv-builder',
       color: 'from-blue-500 to-blue-600',
       badge: 'Popular'
@@ -29,34 +26,21 @@ const Dashboard = () => {
     {
       title: 'Browse Templates',
       description: '10+ professional designs',
-      icon: (
-        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3z" />
-        </svg>
-      ),
+      icon: <LayoutGrid className="w-7 h-7" />,
       link: '/cv-templates',
       color: 'from-purple-500 to-purple-600'
     },
     {
       title: 'HD Wallpapers',
       description: 'Download stunning wallpapers',
-      icon: (
-        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-      ),
+      icon: <ImageIcon className="w-7 h-7" />,
       link: '/wallpapers',
       color: 'from-pink-500 to-rose-600'
     },
     {
       title: 'Stock Photos',
       description: 'Free high-quality images',
-      icon: (
-        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      ),
+      icon: <Camera className="w-7 h-7" />,
       link: '/stock-photos',
       color: 'from-cyan-500 to-teal-600'
     }
@@ -66,31 +50,19 @@ const Dashboard = () => {
     { 
       label: 'CVs Created', 
       value: userStats?.cvsCreated || 0, 
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      ),
+      icon: <FileText className="w-6 h-6" />,
       color: 'from-blue-500 to-blue-600'
     },
     { 
       label: 'Total Downloads', 
       value: userStats?.totalDownloads || 0, 
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-        </svg>
-      ),
+      icon: <Download className="w-6 h-6" />,
       color: 'from-green-500 to-emerald-600'
     },
     { 
       label: 'Templates Used', 
       value: Array.isArray(userStats?.templatesUsed) ? userStats.templatesUsed.length : 0, 
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5z" />
-        </svg>
-      ),
+      icon: <LayoutGrid className="w-6 h-6" />,
       color: 'from-purple-500 to-pink-600'
     }
   ];
@@ -140,9 +112,7 @@ const Dashboard = () => {
                 to="/cv-builder"
                 className="px-8 py-4 bg-white text-blue-600 font-bold rounded-xl hover:bg-blue-50 transition-all shadow-xl hover:shadow-2xl flex items-center gap-3 group"
               >
-                <svg className="w-6 h-6 transform group-hover:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
+                <Plus className="w-6 h-6 transform group-hover:rotate-90 transition-transform" />
                 Create New CV
               </Link>
             </motion.div>
@@ -193,7 +163,7 @@ const Dashboard = () => {
             {/* Detailed Stats */}
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="text-xl">📊</span> Download Breakdown
+                <BarChart3 className="w-5 h-5" /> Download Breakdown
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center p-3 bg-blue-50 rounded-lg">
@@ -218,7 +188,7 @@ const Dashboard = () => {
             {/* Quick Actions */}
             <div>
               <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                <span className="text-2xl">⚡</span> Quick Actions
+                <Zap className="w-6 h-6" /> Quick Actions
               </h2>
               <div className="grid md:grid-cols-2 gap-6">
                 {quickActions.map((action, index) => (
@@ -252,9 +222,7 @@ const Dashboard = () => {
                           </div>
                           <p className="text-sm text-gray-600">{action.description}</p>
                         </div>
-                        <svg className="w-5 h-5 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
+                        <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
                       </div>
                     </Link>
                   </motion.div>
@@ -274,9 +242,7 @@ const Dashboard = () => {
                     >
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600">
-                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
+                          <FileText className="w-6 h-6" />
                         </div>
                         <div>
                           <h3 className="font-semibold text-gray-900">
@@ -300,16 +266,14 @@ const Dashboard = () => {
                 </div>
               ) : (
                 <div className="bg-white rounded-xl p-12 shadow-sm text-center">
-                  <div className="text-6xl mb-4">📄</div>
+                  <div className="mb-4 flex justify-center"><FileText className="w-16 h-16 text-gray-400" /></div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">No CVs yet</h3>
                   <p className="text-gray-500 mb-6">Create your first professional CV today!</p>
                   <Link
                     to="/cv-builder"
                     className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
+                    <Plus className="w-5 h-5" />
                     Create Your First CV
                   </Link>
                 </div>
@@ -336,9 +300,7 @@ const Dashboard = () => {
                   <h3 className="font-bold text-gray-900 text-lg">{user?.name}</h3>
                   <p className="text-sm text-gray-600">{user?.email}</p>
                   <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
+                    <CheckCircle className="w-3 h-3" />
                     Active
                   </span>
                 </div>
@@ -347,27 +309,18 @@ const Dashboard = () => {
               <div className="space-y-2">
                 <Link to="/edit-profile" className="w-full py-3 px-4 text-left rounded-xl hover:bg-blue-100/50 transition-all flex items-center gap-3 text-gray-700 font-medium group">
                   <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-colors">
-                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
+                    <User className="w-5 h-5 text-blue-600" />
                   </div>
                   <span>Edit Profile</span>
-                  <svg className="w-4 h-4 ml-auto text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                  <ChevronRight className="w-4 h-4 ml-auto text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
                 </Link>
                 
                 <Link to="/settings" className="w-full py-3 px-4 text-left rounded-xl hover:bg-purple-100/50 transition-all flex items-center gap-3 text-gray-700 font-medium group">
                   <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-                    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
+                    <Settings className="w-5 h-5 text-purple-600" />
                   </div>
                   <span>Settings</span>
-                  <svg className="w-4 h-4 ml-auto text-gray-400 group-hover:text-purple-600 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                  <ChevronRight className="w-4 h-4 ml-auto text-gray-400 group-hover:text-purple-600 group-hover:translate-x-1 transition-all" />
                 </Link>
                 
                 <div className="my-3 border-t border-gray-200"></div>
@@ -377,9 +330,7 @@ const Dashboard = () => {
                   className="w-full py-3 px-4 text-left rounded-xl hover:bg-red-50 transition-all flex items-center gap-3 text-red-600 font-medium group"
                 >
                   <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center group-hover:bg-red-200 transition-colors">
-                    <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
+                    <LogOut className="w-5 h-5 text-red-600" />
                   </div>
                   <span>Logout</span>
                 </button>
@@ -398,33 +349,25 @@ const Dashboard = () => {
               <div className="relative z-10">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                    <span className="text-2xl">💡</span>
+                    <Lightbulb className="w-6 h-6" />
                   </div>
                   <h3 className="font-bold text-lg">Pro CV Tips</h3>
                 </div>
                 <ul className="space-y-3 text-sm text-white/90">
                   <li className="flex items-start gap-2">
-                    <svg className="w-5 h-5 text-white mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
+                    <CheckCircle className="w-5 h-5 text-white mt-0.5 flex-shrink-0" />
                     <span>Keep your CV concise (1-2 pages maximum)</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <svg className="w-5 h-5 text-white mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
+                    <CheckCircle className="w-5 h-5 text-white mt-0.5 flex-shrink-0" />
                     <span>Use strong action verbs to describe achievements</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <svg className="w-5 h-5 text-white mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
+                    <CheckCircle className="w-5 h-5 text-white mt-0.5 flex-shrink-0" />
                     <span>Quantify your accomplishments with numbers</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <svg className="w-5 h-5 text-white mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
+                    <CheckCircle className="w-5 h-5 text-white mt-0.5 flex-shrink-0" />
                     <span>Customize your CV for each job application</span>
                   </li>
                 </ul>
