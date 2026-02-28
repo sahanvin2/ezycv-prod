@@ -37,13 +37,13 @@ router.get('/', async (req, res) => {
       featured,
       license,
       page = 1, 
-      limit = 20,
+      limit = 24,
       sort = '-createdAt'
     } = req.query;
 
     const query = {};
     
-    if (category) query.category = category;
+    if (category && category !== 'all') query.category = category;
     if (license) query.license = license;
     if (featured === 'true') query.featured = true;
     if (search) {
@@ -55,7 +55,7 @@ router.get('/', async (req, res) => {
     const photos = await Photo.find(query)
       .sort(sort)
       .skip(skip)
-      .limit(parseInt(limit));
+      .limit(Math.min(parseInt(limit), 100));
 
     const total = await Photo.countDocuments(query);
 
@@ -79,10 +79,26 @@ router.get('/', async (req, res) => {
 router.get('/categories', async (req, res) => {
   try {
     const categories = await Photo.aggregate([
-      { $group: { _id: '$category', count: { $sum: 1 } } },
+      { $group: { _id: '$category', count: { $sum: 1 }, downloads: { $sum: '$downloads' } } },
       { $sort: { count: -1 } }
     ]);
     res.json(categories);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/photos/featured
+// @desc    Get featured photos for homepage/hero sections
+// @access  Public
+router.get('/featured', async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 12, 48);
+    const photos = await Photo.find({ featured: true })
+      .sort('-createdAt')
+      .limit(limit);
+    res.json({ photos: normPList(photos) });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -127,9 +143,10 @@ router.post('/:id/download', async (req, res) => {
     }
     
     const normPhoto = normP(photo);
+    // Prefer explicit downloadUrl (5K JPG), fall back to imageUrl
     res.json({ 
       message: 'Download tracked',
-      downloadUrl: normPhoto.imageUrl
+      downloadUrl: normPhoto.downloadUrl || normPhoto.imageUrl
     });
   } catch (error) {
     console.error(error);
@@ -148,19 +165,21 @@ router.get('/:id/proxy-download', async (req, res) => {
       return res.status(404).json({ message: 'Photo not found' });
     }
     
-    // Fetch the image from the source
+    // Fetch the image from the source (prefer 5K downloadUrl)
     const https = require('https');
-    const http = require('http');
-    const imageUrl = normP(photo).imageUrl;
-    const protocol = imageUrl.startsWith('https') ? https : http;
-    
+    const http  = require('http');
+    const normPhoto = normP(photo);
+    const imageUrl  = normPhoto.downloadUrl || normPhoto.imageUrl;
+    const protocol  = imageUrl.startsWith('https') ? https : http;
+    // SEO-friendly filename: use slug or derived title
+    const dlName = (photo.slug || photo.title.toLowerCase().replace(/\s+/g, '-')) + '.jpg';
+
     protocol.get(imageUrl, (imageResponse) => {
-      // Set headers for file download
       res.setHeader('Content-Type', imageResponse.headers['content-type'] || 'image/jpeg');
-      res.setHeader('Content-Disposition', `attachment; filename="${photo.title.toLowerCase().replace(/\s+/g, '-')}.jpg"`);
+      res.setHeader('Content-Disposition', `attachment; filename="${dlName}"`);
       res.setHeader('Access-Control-Allow-Origin', '*');
-      
-      // Pipe the image data to response
+      // Track download asynchronously
+      Photo.findByIdAndUpdate(photo._id, { $inc: { downloads: 1 } }).catch(() => {});
       imageResponse.pipe(res);
     }).on('error', (err) => {
       console.error('Proxy download error:', err);

@@ -6,6 +6,13 @@ const photoSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  slug: {
+    type: String,
+    unique: true,
+    sparse: true,
+    lowercase: true,
+    trim: true
+  },
   description: {
     type: String,
     trim: true
@@ -13,6 +20,7 @@ const photoSchema = new mongoose.Schema({
   category: {
     type: String,
     required: true,
+    lowercase: true,
     enum: ['business', 'technology', 'people', 'nature', 'food', 'travel', 'fashion', 'sports', 'health', 'education', 'other']
   },
   imageUrl: {
@@ -23,14 +31,24 @@ const photoSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  previewUrl: {
+    type: String  // WebP preview URL (same as thumbnailUrl for B2-hosted photos)
+  },
+  downloadUrl: {
+    type: String  // 5K JPG download URL (same as imageUrl for B2-hosted photos)
+  },
   resolution: {
-    width: { type: Number, required: true },
-    height: { type: Number, required: true }
+    width: { type: Number, default: 0 },
+    height: { type: Number, default: 0 }
   },
   fileSize: {
-    type: Number
+    type: Number,
+    default: 0
   },
-  tags: [String],
+  tags: {
+    type: [String],
+    default: []
+  },
   downloads: {
     type: Number,
     default: 0
@@ -59,10 +77,16 @@ const photoSchema = new mongoose.Schema({
   storageType: {
     type: String,
     enum: ['local', 'b2'],
-    default: 'local'
+    default: 'b2'
   },
   storageKey: {
-    type: String // B2 storage key for deletion
+    type: String  // B2 key for the 5K JPG
+  },
+  previewKey: {
+    type: String  // B2 key for the WebP preview
+  },
+  originalFileName: {
+    type: String  // Original source filename for reference
   },
   createdAt: {
     type: Date,
@@ -70,6 +94,9 @@ const photoSchema = new mongoose.Schema({
   }
 });
 
+// Full-text search index
 photoSchema.index({ title: 'text', description: 'text', tags: 'text' });
+photoSchema.index({ category: 1, createdAt: -1 });
+photoSchema.index({ featured: 1, category: 1 });
 
 module.exports = mongoose.model('Photo', photoSchema);

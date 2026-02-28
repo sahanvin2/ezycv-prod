@@ -5,7 +5,7 @@ import { useStatsStore, useAuthStore } from '../store/store';
 import toast from 'react-hot-toast';
 import { triggerSupportPopup } from '../components/SupportPopup';
 import { trackView, trackDownload, trackLike, trackSearch, trackSessionStart, getRecommendedCategoryOrder } from '../utils/userBehavior';
-import { Search, Loader2, Download, Heart, X, Palette, Briefcase, Monitor, Users, Leaf, UtensilsCrossed, Shirt, GraduationCap, AlertTriangle, Camera, Trash2 } from 'lucide-react';
+import { Search, Loader2, Download, Heart, X, Palette, Briefcase, Monitor, Users, Leaf, UtensilsCrossed, Shirt, GraduationCap, AlertTriangle, Camera, Trash2, Plane, ChevronDown } from 'lucide-react';
 
 // Normalise API base – strip trailing /api so we can always append /api/<resource>
 const _API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -23,6 +23,10 @@ const StockPhotos = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [likedPhotos, setLikedPhotos] = useState(new Set());
   const [downloadingId, setDownloadingId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPhotos, setTotalPhotos] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const PHOTOS_PER_PAGE = 24;
 
   // Track session on mount
   useEffect(() => {
@@ -37,7 +41,7 @@ const StockPhotos = () => {
     people: <Users className="w-4 h-4" />,
     nature: <Leaf className="w-4 h-4" />,
     food: <UtensilsCrossed className="w-4 h-4" />,
-    travel: '✈️',
+    travel: <Plane className="w-4 h-4" />,
     fashion: <Shirt className="w-4 h-4" />,
     health: <Heart className="w-4 h-4" />,
     education: <GraduationCap className="w-4 h-4" />
@@ -64,37 +68,44 @@ const StockPhotos = () => {
   );
 
   // Fetch photos from API
-  const fetchPhotos = async () => {
-    setLoading(true);
+  const fetchPhotos = async (page = 1, append = false) => {
+    if (append) setLoadingMore(true);
+    else setLoading(true);
     setApiError(false);
     try {
       const params = new URLSearchParams();
       if (selectedCategory !== 'all') params.append('category', selectedCategory);
       if (searchQuery) params.append('search', searchQuery);
-      params.append('limit', '50');
+      params.append('limit', PHOTOS_PER_PAGE.toString());
+      params.append('page', page.toString());
       
       const response = await fetch(`${API_URL}/api/photos?${params}`);
       
       if (response.ok) {
         const data = await response.json();
-        setPhotos(data.photos || []);
+        const newPhotos = data.photos || [];
+        setPhotos(prev => append ? [...prev, ...newPhotos] : newPhotos);
+        setTotalPhotos(data.pagination?.total || newPhotos.length);
+        setCurrentPage(page);
       } else {
         const errData = await response.json().catch(() => ({}));
         console.error('Failed to fetch photos:', response.status, errData);
-        setPhotos([]);
+        if (!append) setPhotos([]);
         setApiError(errData.hint || errData.message || `Server error (${response.status})`);
       }
     } catch (error) {
       console.error('Error fetching photos:', error);
-      setPhotos([]);
+      if (!append) setPhotos([]);
       setApiError('Cannot reach the server. Make sure the backend is running on port 5000.');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
   useEffect(() => {
-    fetchPhotos();
+    setCurrentPage(1);
+    fetchPhotos(1, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory, searchQuery]);
 
@@ -310,10 +321,15 @@ const StockPhotos = () => {
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
               Free Stock Photos
             </h1>
-            <p className="text-xl text-cyan-100 max-w-2xl mx-auto mb-8">
+            <p className="text-xl text-cyan-100 max-w-2xl mx-auto mb-2">
               High-quality stock photos for personal and commercial use. 
               No attribution required.
             </p>
+            {totalPhotos > 0 && (
+              <p className="text-cyan-200 text-sm mb-8">
+                {totalPhotos.toLocaleString()}+ photos across 10 categories — all free, all 5K quality
+              </p>
+            )}
             
             {/* Search Bar */}
             <div className="max-w-2xl mx-auto">
@@ -403,7 +419,7 @@ const StockPhotos = () => {
                   >
                     <div className="aspect-[4/3]">
                       <img
-                        src={photo.thumbnailUrl || photo.imageUrl}
+                        src={photo.previewUrl || photo.thumbnailUrl || photo.imageUrl}
                         alt={photo.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         loading="lazy"
@@ -474,14 +490,40 @@ const StockPhotos = () => {
                       </div>
                     </div>
 
-                    {/* Free Badge */}
-                    <div className="absolute top-3 right-3">
+                    {/* Free + 5K Badges */}
+                    <div className="absolute top-3 right-3 flex flex-col gap-1">
                       <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-500 text-white">
                         FREE
                       </span>
+                      {(photo.resolution?.width >= 3000 || photo.storageType === 'b2') && (
+                        <span className="px-2 py-1 rounded-full text-xs font-bold bg-purple-600 text-white">
+                          5K
+                        </span>
+                      )}
                     </div>
                   </motion.div>
                 ))}
+              </div>
+            )}
+
+            {/* Load More */}
+            {!loading && !apiError && photos.length > 0 && photos.length < totalPhotos && (
+              <div className="mt-10 text-center">
+                <p className="text-sm text-gray-500 mb-4">
+                  Showing {photos.length.toLocaleString()} of {totalPhotos.toLocaleString()} photos
+                </p>
+                <button
+                  onClick={() => fetchPhotos(currentPage + 1, true)}
+                  disabled={loadingMore}
+                  className="px-8 py-3 bg-cyan-600 text-white rounded-xl font-semibold hover:bg-cyan-700 transition-colors flex items-center gap-2 mx-auto disabled:opacity-70"
+                >
+                  {loadingMore ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5" />
+                  )}
+                  {loadingMore ? 'Loading...' : 'Load More Photos'}
+                </button>
               </div>
             )}
 
