@@ -173,7 +173,9 @@ async function seedCategory(catDir, dry) {
     console.warn(`  ⚠️  No category.json in ${catDir} — skipping`);
     return { processed: 0, skipped: 0, failed: 0 };
   }
-  const { slug: catSlug, dbCategory, folderName } = JSON.parse(fs.readFileSync(mapFile, 'utf8'));
+  const { slug: catSlug, dbCategory, folderName } = JSON.parse(
+    fs.readFileSync(mapFile, 'utf8').replace(/^\uFEFF/, '') // strip BOM if present
+  );
 
   const previewDir  = path.join(catDir, 'preview');
   const downloadDir = path.join(catDir, '5k');
