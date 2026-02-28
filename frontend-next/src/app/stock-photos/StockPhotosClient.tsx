@@ -68,6 +68,8 @@ export default function StockPhotosClient() {
   const [total, setTotal]             = useState(0);
   const [downloading, setDownloading] = useState<string | null>(null);
   const [lightbox, setLightbox]       = useState<Photo | null>(null);
+  const [relatedPhotos, setRelatedPhotos] = useState<Photo[]>([]);
+  const [loadingRelated, setLoadingRelated] = useState(false);
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasMore = photos.length < total;
 
@@ -82,7 +84,9 @@ export default function StockPhotosClient() {
       if (!res.ok) throw new Error('Failed to load photos');
       const data = await res.json();
       const items: Photo[] = data.photos ?? data;
-      setPhotos(prev => append ? [...prev, ...items] : items);
+      // Shuffle for random display order
+      const shuffled = [...items].sort(() => Math.random() - 0.5);
+      setPhotos(prev => append ? [...prev, ...shuffled] : shuffled);
       setTotal(data.pagination?.total ?? data.total ?? items.length);
       setPage(pg);
     } catch (e: unknown) {
@@ -105,6 +109,30 @@ export default function StockPhotosClient() {
     setCategory(cat);
     setPage(1);
     setPhotos([]);
+  };
+
+  const fetchRelatedPhotos = async (photo: Photo) => {
+    if (!photo?.category) return;
+    setLoadingRelated(true);
+    setRelatedPhotos([]);
+    try {
+      const params = new URLSearchParams({ category: photo.category, limit: '13' });
+      const res = await fetch(`/api/photos?${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        const related = (data.photos as Photo[] || [])
+          .filter((p: Photo) => p._id !== photo._id)
+          .sort(() => Math.random() - 0.5)
+          .slice(0, 6);
+        setRelatedPhotos(related);
+      }
+    } catch { /* ignore */ }
+    finally { setLoadingRelated(false); }
+  };
+
+  const openLightbox = (photo: Photo) => {
+    setLightbox(photo);
+    fetchRelatedPhotos(photo);
   };
 
   const handleDownload = async (p: Photo) => {
@@ -233,7 +261,7 @@ export default function StockPhotosClient() {
                   <div
                     key={p._id}
                     className="break-inside-avoid group relative rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer bg-gray-200 mb-3"
-                    onClick={() => setLightbox(p)}
+                    onClick={() => openLightbox(p)}
                   >
                     <div
                       className="relative w-full"
@@ -287,43 +315,142 @@ export default function StockPhotosClient() {
 
       {/* Lightbox */}
       {lightbox && (
-        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setLightbox(null)}>
-          <div className="relative max-w-5xl w-full" onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setLightbox(null)} className="absolute -top-10 right-0 text-white/70 hover:text-white transition-colors">
-              <X className="w-8 h-8" />
-            </button>
-            <div
-              className="relative rounded-2xl overflow-hidden bg-gray-900"
-              style={{
-                aspectRatio: lightbox.resolution?.width && lightbox.resolution?.height ? `${lightbox.resolution.width}/${lightbox.resolution.height}` : '4/3',
-                maxHeight: '75vh'
-              }}
-            >
-              <Image src={lightbox.imageUrl} alt={lightbox.title} fill className="object-contain" sizes="100vw" priority />
-            </div>
-            <div className="mt-4 bg-gray-900/60 rounded-2xl p-4 backdrop-blur-sm flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <div className="flex-1 min-w-0">
-                <h3 className="text-white font-semibold text-lg truncate">{lightbox.title}</h3>
-                {lightbox.description && <p className="text-gray-400 text-sm mt-0.5 line-clamp-2">{lightbox.description}</p>}
-                <p className="text-gray-500 text-sm mt-1">
-                  {lightbox.resolution?.width}x{lightbox.resolution?.height}
-                  {lightbox.resolution?.width >= 3000 && <span className="ml-2 text-purple-400 font-bold">5K</span>}
-                  {'  '}{lightbox.category}{'  '}{lightbox.downloads?.toLocaleString() ?? 0} downloads
-                </p>
-                {lightbox.tags?.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {lightbox.tags.slice(0, 6).map((t) => <span key={t} className="px-2 py-0.5 bg-white/10 text-gray-300 text-xs rounded-full">#{t}</span>)}
-                  </div>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.88)' }}
+          onClick={() => setLightbox(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[95vh] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Image */}
+            <div className="relative bg-gray-900 flex-shrink-0" style={{ height: '52vh' }}>
+              <Image
+                src={lightbox.previewUrl || lightbox.thumbnailUrl || lightbox.imageUrl}
+                alt={lightbox.title}
+                fill
+                className="object-contain"
+                sizes="(max-width: 768px) 100vw, 768px"
+                priority
+              />
+              <button
+                onClick={() => setLightbox(null)}
+                className="absolute top-3 right-3 w-9 h-9 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center transition-colors backdrop-blur-sm z-10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              {/* Quality badges on image */}
+              <div className="absolute bottom-3 left-3 flex gap-1.5 z-10">
+                <span className="px-2.5 py-1 bg-green-500 text-white text-[11px] font-bold rounded-full shadow">FREE</span>
+                {(lightbox.storageType === 'b2' || (lightbox.resolution?.width ?? 0) >= 3000) && (
+                  <span className="px-2.5 py-1 bg-purple-600 text-white text-[11px] font-bold rounded-full shadow">5K Quality</span>
                 )}
               </div>
-              <button
-                onClick={() => handleDownload(lightbox)}
-                disabled={downloading === lightbox._id}
-                className="flex items-center gap-2 px-5 py-3 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 transition-colors shadow-lg flex-shrink-0 disabled:opacity-60"
-              >
-                {downloading === lightbox._id ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
-                {downloading === lightbox._id ? 'Downloading' : 'Free Download'}
-              </button>
+            </div>
+
+            {/* Scrollable info */}
+            <div className="flex-1 overflow-y-auto overscroll-contain p-5">
+              {/* Title + meta */}
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-xl font-bold text-gray-900 leading-tight">{lightbox.title}</h2>
+                  <div className="flex items-center gap-3 text-sm text-gray-500 mt-1 flex-wrap">
+                    <span className="font-mono">{lightbox.resolution?.width ?? '?'} × {lightbox.resolution?.height ?? '?'}</span>
+                    <span className="flex items-center gap-1">
+                      <Download className="w-3.5 h-3.5" />
+                      {(lightbox.downloads ?? 0).toLocaleString()} downloads
+                    </span>
+                    <span className="capitalize px-2 py-0.5 bg-gray-100 rounded-full text-xs">{lightbox.category}</span>
+                  </div>
+                </div>
+                <span className="flex-shrink-0 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Free License</span>
+              </div>
+
+              {/* Description */}
+              {lightbox.description && (
+                <p className="text-sm text-gray-600 mb-3 leading-relaxed">{lightbox.description}</p>
+              )}
+
+              {/* Tags */}
+              {lightbox.tags?.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-4">
+                  {lightbox.tags.map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => { setSearch(t); setLightbox(null); }}
+                      className="px-2.5 py-1 bg-gray-100 hover:bg-teal-50 hover:text-teal-700 text-gray-600 text-xs rounded-full transition-colors"
+                    >
+                      #{t}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Download + heart */}
+              <div className="flex gap-2 mb-5">
+                <button
+                  onClick={() => handleDownload(lightbox)}
+                  disabled={downloading === lightbox._id}
+                  className="flex-1 py-3.5 bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-teal-500/25 disabled:opacity-60"
+                >
+                  {downloading === lightbox._id
+                    ? <Loader2 className="w-5 h-5 animate-spin" />
+                    : <Download className="w-5 h-5" />}
+                  <span>
+                    {downloading === lightbox._id
+                      ? 'Downloading…'
+                      : (lightbox.storageType === 'b2' || (lightbox.resolution?.width ?? 0) >= 3000)
+                        ? 'Download Free — 5K'
+                        : 'Download Free'}
+                  </span>
+                </button>
+                <button
+                  onClick={() => fetch(`/api/photos/${lightbox._id}/like`, { method: 'POST' }).catch(() => {})}
+                  className="px-4 py-3.5 bg-gray-100 hover:bg-red-50 hover:text-red-500 text-gray-600 rounded-xl transition-colors"
+                  title="Like"
+                >
+                  <Heart className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Related / Similar Photos */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-1.5">
+                  <Camera className="w-4 h-4 text-gray-400" />
+                  Similar Photos
+                </h3>
+                {loadingRelated ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <div key={i} className="aspect-square bg-gray-100 rounded-xl animate-pulse" />
+                    ))}
+                  </div>
+                ) : relatedPhotos.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    {relatedPhotos.map((rp) => (
+                      <div
+                        key={rp._id}
+                        className="aspect-square rounded-xl overflow-hidden cursor-pointer hover:opacity-90 hover:scale-105 transition-all relative group shadow-sm"
+                        onClick={() => { openLightbox(rp); }}
+                      >
+                        <Image
+                          src={rp.previewUrl || rp.thumbnailUrl || rp.imageUrl}
+                          alt={rp.title}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 33vw, 256px"
+                        />
+                        {(rp.storageType === 'b2' || (rp.resolution?.width ?? 0) >= 3000) && (
+                          <span className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-purple-600/90 text-white text-[9px] font-bold rounded-full">5K</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-400 text-center py-4">No similar photos found</p>
+                )}
+              </div>
             </div>
           </div>
         </div>

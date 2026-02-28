@@ -26,6 +26,8 @@ const StockPhotos = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPhotos, setTotalPhotos] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [relatedPhotos, setRelatedPhotos] = useState([]);
+  const [loadingRelated, setLoadingRelated] = useState(false);
   const PHOTOS_PER_PAGE = 24;
 
   // Track session on mount
@@ -84,7 +86,9 @@ const StockPhotos = () => {
       if (response.ok) {
         const data = await response.json();
         const newPhotos = data.photos || [];
-        setPhotos(prev => append ? [...prev, ...newPhotos] : newPhotos);
+        // Shuffle for random display order
+        const shuffled = [...newPhotos].sort(() => Math.random() - 0.5);
+        setPhotos(prev => append ? [...prev, ...shuffled] : shuffled);
         setTotalPhotos(data.pagination?.total || newPhotos.length);
         setCurrentPage(page);
       } else {
@@ -286,6 +290,26 @@ const StockPhotos = () => {
     return num;
   };
 
+  // Fetch related photos from same category
+  const fetchRelatedPhotos = async (photo) => {
+    if (!photo?.category) return;
+    setLoadingRelated(true);
+    setRelatedPhotos([]);
+    try {
+      const p = new URLSearchParams({ category: photo.category, limit: '13' });
+      const res = await fetch(`${API_URL}/api/photos?${p}`);
+      if (res.ok) {
+        const data = await res.json();
+        const related = (data.photos || [])
+          .filter(ph => ph._id !== photo._id)
+          .sort(() => Math.random() - 0.5)
+          .slice(0, 6);
+        setRelatedPhotos(related);
+      }
+    } catch (e) { /* ignore */ }
+    finally { setLoadingRelated(false); }
+  };
+
   // Swipe-down to close modal on mobile
   const photoTouchStartY = useRef(null);
   const [photoSwipeDelta, setPhotoSwipeDelta] = useState(0);
@@ -415,7 +439,7 @@ const StockPhotos = () => {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: index * 0.05 }}
                     className="group relative rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer bg-white"
-                    onClick={() => { setSelectedPhoto(photo); trackView(photo); }}
+                    onClick={() => { setSelectedPhoto(photo); trackView(photo); fetchRelatedPhotos(photo); }}
                   >
                     <div className="aspect-[4/3]">
                       <img
@@ -571,109 +595,168 @@ const StockPhotos = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 modal-overlay flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.88)' }}
             onClick={() => setSelectedPhoto(null)}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+              initial={{ scale: 0.92, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.92, opacity: 0, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[95vh] flex flex-col overflow-hidden"
               onClick={(e) => e.stopPropagation()}
               onTouchStart={handlePhotoTouchStart}
               onTouchMove={handlePhotoTouchMove}
               onTouchEnd={handlePhotoTouchEnd}
               style={photoSwipeDelta > 0 ? { transform: `translateY(${Math.min(photoSwipeDelta * 0.35, 60)}px)`, transition: 'none' } : {}}
             >
-              {/* Swipe-down indicator -- mobile only */}
-              <div className="flex justify-center pt-3 pb-1 md:hidden">
+              {/* Mobile swipe handle */}
+              <div className="flex justify-center pt-3 pb-1 md:hidden flex-shrink-0">
                 <div className="w-10 h-1.5 bg-gray-300 rounded-full"></div>
               </div>
-              <p className="text-center text-xs text-gray-400 pb-1 md:hidden">Swipe down to close</p>
-              {/* Image */}
-              <div className="relative bg-gray-100">
+
+              {/* Image — fixed height, uses preview WebP for fast loading */}
+              <div className="relative bg-gray-900 flex-shrink-0">
                 <img
-                  src={selectedPhoto.imageUrl}
+                  src={selectedPhoto.previewUrl || selectedPhoto.thumbnailUrl || selectedPhoto.imageUrl}
                   alt={selectedPhoto.title}
-                  className="w-full max-h-[60vh] object-contain"
+                  className="w-full object-contain"
+                  style={{ maxHeight: '52vh' }}
                 />
+                {/* Close button */}
                 <button
                   onClick={() => setSelectedPhoto(null)}
-                  className="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors"
+                  className="absolute top-3 right-3 w-9 h-9 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center transition-colors backdrop-blur-sm"
                 >
-                  <X className="w-6 h-6" />
+                  <X className="w-5 h-5" />
                 </button>
+                {/* Quality badge on image */}
+                <div className="absolute bottom-3 left-3 flex gap-1.5">
+                  <span className="px-2.5 py-1 bg-green-500 text-white text-xs font-bold rounded-full shadow">FREE</span>
+                  {(selectedPhoto.resolution?.width >= 3000 || selectedPhoto.storageType === 'b2') && (
+                    <span className="px-2.5 py-1 bg-purple-600 text-white text-xs font-bold rounded-full shadow">5K Quality</span>
+                  )}
+                </div>
               </div>
 
-              {/* Info */}
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">{selectedPhoto.title}</h2>
-                    <div className="flex items-center gap-4 text-gray-600">
-                      <span>{selectedPhoto.resolution.width} x {selectedPhoto.resolution.height}</span>
-                      <span className="flex items-center gap-1">
-                        <Download className="w-4 h-4" />
-                        {formatNumber(selectedPhoto.downloads)} downloads
-                      </span>
+              {/* Scrollable content below image */}
+              <div className="flex-1 overflow-y-auto overscroll-contain">
+                <div className="p-5">
+                  {/* Title + meta */}
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h2 className="text-xl font-bold text-gray-900 leading-tight">{selectedPhoto.title}</h2>
+                      <div className="flex items-center gap-3 text-sm text-gray-500 mt-1 flex-wrap">
+                        <span className="font-mono">{selectedPhoto.resolution?.width || '?'} × {selectedPhoto.resolution?.height || '?'}</span>
+                        <span className="flex items-center gap-1">
+                          <Download className="w-3.5 h-3.5" />
+                          {formatNumber(selectedPhoto.downloads || 0)} downloads
+                        </span>
+                        <span className="capitalize px-2 py-0.5 bg-gray-100 rounded-full text-xs">{selectedPhoto.category}</span>
+                      </div>
                     </div>
+                    <span className="flex-shrink-0 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Free License</span>
                   </div>
-                  <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700">
-                    Free License
-                  </span>
-                </div>
 
-                {/* Tags */}
-                <div className="flex flex-wrap gap-2 mb-6">
-                  {selectedPhoto.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
+                  {/* Description */}
+                  {selectedPhoto.description && (
+                    <p className="text-sm text-gray-600 mb-3 leading-relaxed">{selectedPhoto.description}</p>
+                  )}
 
-                {/* Action Buttons */}
-                <div className="flex gap-3 mb-4">
-                  {/* Like Button */}
-                  <button
-                    onClick={(e) => handleLike(e, selectedPhoto)}
-                    className={`flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all ${
-                      likedPhotos.has(selectedPhoto._id)
-                        ? 'bg-red-500 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    <Heart className={`w-5 h-5 ${likedPhotos.has(selectedPhoto._id) ? 'fill-current' : ''}`} />
-                    {likedPhotos.has(selectedPhoto._id) ? 'Liked' : 'Like'}
-                  </button>
-                  
-                  {/* Delete Button (only for owner) */}
-                  {isOwner(selectedPhoto) && (
+                  {/* Tags — clickable to search */}
+                  {selectedPhoto.tags?.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-4">
+                      {selectedPhoto.tags.map((tag) => (
+                        <button
+                          key={tag}
+                          onClick={() => { setSearchQuery(tag); setSelectedPhoto(null); }}
+                          className="px-2.5 py-1 bg-gray-100 hover:bg-cyan-50 hover:text-cyan-700 text-gray-600 text-xs rounded-full transition-colors"
+                        >
+                          #{tag}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Action row — Download (primary) + Like + Delete */}
+                  <div className="flex gap-2 mb-5">
                     <button
-                      onClick={(e) => handleDelete(e, selectedPhoto)}
-                      className="px-6 py-3 bg-red-100 text-red-600 rounded-xl font-semibold hover:bg-red-200 transition-all flex items-center gap-2"
+                      onClick={(e) => handleDownload(e, selectedPhoto)}
+                      disabled={downloadingId === selectedPhoto._id}
+                      className="flex-1 py-3.5 bg-cyan-600 hover:bg-cyan-700 active:scale-95 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-cyan-500/25 disabled:opacity-70"
                     >
-                      <Trash2 className="w-5 h-5" />
-                      Delete
+                      {downloadingId === selectedPhoto._id ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Download className="w-5 h-5" />
+                      )}
+                      <span>
+                        {downloadingId === selectedPhoto._id
+                          ? 'Downloading…'
+                          : (selectedPhoto.resolution?.width >= 3000 || selectedPhoto.storageType === 'b2')
+                            ? 'Download Free — 5K'
+                            : 'Download Free'}
+                      </span>
                     </button>
-                  )}
+                    <button
+                      onClick={(e) => handleLike(e, selectedPhoto)}
+                      className={`px-4 py-3.5 rounded-xl font-semibold flex items-center gap-1.5 transition-all ${
+                        likedPhotos.has(selectedPhoto._id)
+                          ? 'bg-red-500 text-white'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      <Heart className={`w-5 h-5 ${likedPhotos.has(selectedPhoto._id) ? 'fill-current' : ''}`} />
+                    </button>
+                    {isOwner(selectedPhoto) && (
+                      <button
+                        onClick={(e) => handleDelete(e, selectedPhoto)}
+                        className="px-4 py-3.5 bg-red-100 text-red-600 rounded-xl hover:bg-red-200 transition-all"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Related / Similar Photos */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-1.5">
+                      <Camera className="w-4 h-4 text-gray-400" />
+                      Similar Photos
+                    </h3>
+                    {loadingRelated ? (
+                      <div className="grid grid-cols-3 gap-2">
+                        {[...Array(6)].map((_, i) => (
+                          <div key={i} className="aspect-square bg-gray-100 rounded-xl animate-pulse" />
+                        ))}
+                      </div>
+                    ) : relatedPhotos.length > 0 ? (
+                      <div className="grid grid-cols-3 gap-2">
+                        {relatedPhotos.map((rp) => (
+                          <div
+                            key={rp._id}
+                            className="aspect-square rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition-all hover:scale-105 relative group shadow-sm"
+                            onClick={() => { setSelectedPhoto(rp); fetchRelatedPhotos(rp); trackView(rp); }}
+                          >
+                            <img
+                              src={rp.previewUrl || rp.thumbnailUrl || rp.imageUrl}
+                              alt={rp.title}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-xl" />
+                            {(rp.storageType === 'b2' || rp.resolution?.width >= 3000) && (
+                              <span className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-purple-600/90 text-white text-[9px] font-bold rounded-full">5K</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-400 text-center py-4">No similar photos found</p>
+                    )}
+                  </div>
                 </div>
-                
-                <button
-                  onClick={(e) => handleDownload(e, selectedPhoto)}
-                  disabled={downloadingId === selectedPhoto._id}
-                  className="w-full py-4 bg-cyan-600 text-white font-semibold rounded-xl hover:bg-cyan-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
-                >
-                  {downloadingId === selectedPhoto._id ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <Download className="w-5 h-5" />
-                  )}
-                  {downloadingId === selectedPhoto._id ? 'Downloading...' : 'Download Free'}
-                </button>
               </div>
             </motion.div>
           </motion.div>
