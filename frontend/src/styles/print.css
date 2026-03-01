@@ -1,22 +1,12 @@
 /* =============================================================
-   EzyCV – Print / PDF styles
+   EzyCV – Print styles
    
-   KEY FIX: Use CSS `zoom` instead of `transform: scale()`.
+   NOTE: The primary PDF download path is now a popup-window approach
+   (see generatePDF in CVBuilder.js), which avoids all body-height /
+   page-break issues entirely by printing a page with ONLY the CV.
    
-   transform:scale() only scales VISUALLY — page breaks are still
-   calculated on the original layout dimensions, causing the CV
-   to be split into 3+ ragged pages.
-   
-   zoom scales BOTH visually AND layout dimensions, so the browser
-   places page breaks correctly after scaling.
-   
-   CV template root: 595 px wide  (A4 @ 72 dpi)
-   zoom: 1.335  →  595 × 1.335 ≈ 794 px  =  A4 width @ 96 dpi
-   
-   Heights:
-     Minimal CV  ~630 px  × 1.335 ≈  841 px  → 1 page  ✓
-     Normal  CV  ~842 px  × 1.335 ≈ 1124 px  → 1 page  ✓
-     Heavy   CV  ~1250 px × 1.335 ≈ 1669 px  → 2 pages ✓
+   This file handles the fallback case where a user presses Ctrl+P
+   on the main CV Builder page — it still shows a clean single CV.
    ============================================================= */
 
 /* ── Screen: keep the print mirror hidden off-canvas ──────── */
@@ -30,136 +20,46 @@
   }
 }
 
-/* ── Print ─────────────────────────────────────────────────── */
+/* ── Print (Ctrl+P fallback on main page) ───────────────────── */
 @media print {
 
-  /* 1 ─ A4, no margins */
-  @page {
-    size: A4 portrait;
-    margin: 0;
-  }
+  @page { size: A4 portrait; margin: 0; }
 
-  /* 2 ─ Blank slate */
-  body {
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-  body * {
-    visibility: hidden !important;
-  }
+  /* Hide the entire page body — use display:none so it takes NO space */
+  body > * { display: none !important; }
 
-  /* 3 ─ Show ONLY the hidden CV mirror */
-  [data-cv-print="true"],
-  [data-cv-print="true"] * {
-    visibility: visible !important;
-  }
-
-  /* 4 ─ Place wrapper at the page origin */
+  /* Make the CV print wrapper itself visible and in normal flow */
   [data-cv-print="true"] {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 100% !important;
-    max-width: none !important;
+    display: block !important;
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    visibility: visible !important;
     margin: 0 !important;
     padding: 0 !important;
     box-shadow: none !important;
-    border: none !important;
-    background: white !important;
-    transform: none !important;
   }
+  [data-cv-print="true"] * { visibility: visible !important; }
 
-  /* 5 ─ Scale via zoom (not transform) so page breaks work     */
+  /* Scale via zoom – page breaks are layout-aware */
   [data-cv-print="true"] > div {
     zoom: 1.335 !important;
-    transform: none !important;
-    max-height: none !important;
-    /* Compact base font keeps heavy CVs within 2 pages          */
     font-size: 9px !important;
-    line-height: 1.3 !important;
+    line-height: 1.35 !important;
   }
+  [data-cv-print="true"] h1 { font-size: 20px !important; margin-bottom: 2px !important; }
+  [data-cv-print="true"] h2 { font-size: 10.5px !important; margin-bottom: 5px !important; }
+  [data-cv-print="true"] h3 { font-size: 10px !important; margin-bottom: 2px !important; }
+  [data-cv-print="true"] p  { font-size: 8.5px !important; line-height: 1.3 !important; margin-bottom: 2px !important; }
+  [data-cv-print="true"] li { font-size: 8.5px !important; line-height: 1.3 !important; margin-bottom: 1px !important; }
+  [data-cv-print="true"] section { margin-bottom: 8px !important; }
 
-  /* 6 ─ Compact headings */
-  [data-cv-print="true"] h1 {
-    font-size: 20px !important;
-    line-height: 1.15 !important;
-    margin-bottom: 2px !important;
-  }
-  [data-cv-print="true"] h2 {
-    font-size: 10.5px !important;
-    line-height: 1.2 !important;
-    margin-bottom: 5px !important;
-  }
-  [data-cv-print="true"] h3 {
-    font-size: 10px !important;
-    line-height: 1.2 !important;
-    margin-bottom: 2px !important;
-  }
+  h1, h2, h3, h4, h5, h6 { break-after: avoid !important; page-break-after: avoid !important; }
+  img { break-inside: avoid !important; max-width: 100% !important; }
 
-  /* 7 ─ Compact body text */
-  [data-cv-print="true"] p {
-    font-size: 8.5px !important;
-    line-height: 1.3 !important;
-    margin-bottom: 2px !important;
-  }
-  [data-cv-print="true"] li {
-    font-size: 8.5px !important;
-    line-height: 1.3 !important;
-    margin-bottom: 1px !important;
-  }
-
-  /* 8 ─ Compact section gaps */
-  [data-cv-print="true"] section {
-    margin-bottom: 8px !important;
-  }
-
-  /* 9 ─ Tighter header block (coloured top stripe) */
-  [data-cv-print="true"] > div > div:first-child {
-    padding: 16px 20px !important;
-  }
-
-  /* 10 ─ Tighter body padding */
-  [data-cv-print="true"] > div > div:not(:first-child) {
-    padding: 12px 16px !important;
-  }
-
-  /* 11 ─ Avoid orphaned headings */
-  h1, h2, h3, h4, h5, h6 {
-    break-after: avoid !important;
-    page-break-after: avoid !important;
-  }
-
-  /* 12 ─ Keep images whole */
-  img {
-    max-width: 100% !important;
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
-    image-rendering: high-quality !important;
-  }
-
-  /* 13 ─ Preserve background colours in PDF */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     color-adjust: exact !important;
-  }
-
-  /* 14 ─ Font smoothing */
-  body, div, p, span, h1, h2, h3, h4, h5, h6 {
-    text-rendering: optimizeLegibility !important;
-    -webkit-font-smoothing: antialiased !important;
-    -moz-osx-font-smoothing: grayscale !important;
-  }
-
-  /* 15 ─ Hide all UI chrome */
-  button,
-  nav,
-  .no-print,
-  [class*="navbar"],
-  [class*="Navbar"],
-  [class*="header"]:not([data-cv-print]),
-  [class*="footer"]:not([data-cv-print]) {
-    display: none !important;
-    visibility: hidden !important;
   }
 }

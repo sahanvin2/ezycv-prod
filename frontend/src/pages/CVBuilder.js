@@ -65,52 +65,127 @@ const CVBuilder = () => {
   const generatePDF = async () => {
     setIsGenerating(true);
     setIsPreparingPDF(true);
-    
+
     try {
-      // Wait for print preview to mount and render
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // Set document title for PDF filename
-      const originalTitle = document.title;
-      const fileName = currentCV.personalInfo.fullName 
+      // Let React render the hidden [data-cv-print] element
+      await new Promise(resolve => setTimeout(resolve, 400));
+
+      const fileName = currentCV.personalInfo.fullName
         ? `${currentCV.personalInfo.fullName.replace(/\s+/g, '_')}_CV`
         : 'My_CV';
-      document.title = fileName;
-      
-      // Trigger browser's native print dialog (user can save as PDF)
-      window.print();
-      
-      // Restore original title
-      document.title = originalTitle;
-      
+
+      // ── Grab the rendered CV template element ──────────────────────
+      // [data-cv-print="true"] > div  is the actual 595px template root
+      const cvEl = document.querySelector('[data-cv-print="true"] > div');
+
+      if (!cvEl) {
+        // Shouldn't happen, but fall back gracefully
+        throw new Error('CV element not found');
+      }
+
+      // Clone so we can tweak without touching the live DOM
+      const clone = cvEl.cloneNode(true);
+      // Remove any leftover screen-only overrides
+      clone.style.removeProperty('transform');
+      clone.style.removeProperty('transformOrigin');
+
+      // ── Open a minimal popup that contains ONLY the CV ─────────────
+      // We use an about:blank window, write our HTML, then print.
+      // Because the window has NOTHING else on it, there is no extra
+      // whitespace and page breaks land exactly where the content ends.
+      const pw = window.open('', '_blank', 'width=900,height=800');
+      if (!pw) {
+        throw new Error('Popup blocked – please allow popups for this site.');
+      }
+
+      pw.document.write(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>${fileName}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* Reset */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    /* Preserve colours in PDF */
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
+    html, body {
+      background: white;
+      margin: 0;
+      padding: 0;
+    }
+    /* A4 page settings */
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
+    /* The CV template root is 595px wide (A4 @ 72 dpi).
+       zoom: 1.335 → 595 × 1.335 ≈ 794px = A4 @ 96 dpi.
+       Using zoom (not transform) so page breaks are layout-aware. */
+    body > div {
+      zoom: 1.335;
+      font-size: 9px;
+      line-height: 1.35;
+    }
+    body > div h1 { font-size: 20px; line-height: 1.15; margin-bottom: 2px; }
+    body > div h2 { font-size: 10.5px; line-height: 1.2; margin-bottom: 5px; }
+    body > div h3 { font-size: 10px; line-height: 1.2; margin-bottom: 2px; }
+    body > div p  { font-size: 8.5px; line-height: 1.3; margin-bottom: 2px; }
+    body > div li { font-size: 8.5px; line-height: 1.3; margin-bottom: 1px; }
+    body > div section { margin-bottom: 8px; }
+    /* Avoid orphaned headings */
+    h1, h2, h3, h4, h5, h6 { break-after: avoid; page-break-after: avoid; }
+    img { break-inside: avoid; page-break-inside: avoid; max-width: 100%; }
+  </style>
+</head>
+<body>
+  ${clone.outerHTML}
+  <script>
+    // Auto-print once fonts + images are ready, then close the popup
+    window.addEventListener('load', function () {
+      setTimeout(function () {
+        window.focus();
+        window.print();
+        // Close only after the print dialog is dismissed
+        window.addEventListener('afterprint', function () { window.close(); });
+      }, 300);
+    });
+  </script>
+</body>
+</html>`);
+
+      pw.document.close();
+
       // Update live stats
       incrementCVs();
       incrementDownloads();
 
-      // Backup CV to cloud storage (non-blocking)
+      // Backup CV to cloud (non-blocking)
       try {
         const sessionId = localStorage.getItem('cvSessionId') || `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         localStorage.setItem('cvSessionId', sessionId);
-        cvAPI.backupToCloud(currentCV, sessionId).then(() => {
-          console.log('CV backed up to cloud');
-        }).catch(() => {
-          // Silent fail - backup is optional
-        });
-      } catch (e) {
-        // Silent fail
-      }
-      
+        cvAPI.backupToCloud(currentCV, sessionId).catch(() => {});
+      } catch (e) { /* silent */ }
+
       toast.success('Print dialog opened! Choose "Save as PDF" to download.');
       triggerSupportPopup();
     } catch (error) {
-      console.error('Error opening print dialog:', error);
-      toast.error('Failed to open print dialog. Please try again.');
+      console.error('Error generating PDF:', error);
+      toast.error(error.message || 'Failed to open print dialog. Please try again.');
     } finally {
-      // Keep preview mounted for print, clean up after a delay
       setTimeout(() => {
         setIsGenerating(false);
         setIsPreparingPDF(false);
-      }, 1000);
+      }, 1500);
     }
   };
 
