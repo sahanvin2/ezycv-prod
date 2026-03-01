@@ -14,7 +14,6 @@ const CVBuilder = () => {
   const { currentCV, currentStep, setCurrentStep, setTemplate } = cvStore;
   const { incrementCVs, incrementDownloads, trackTemplateUsed } = useStatsStore();
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isPreparingPDF, setIsPreparingPDF] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const cvPreviewRef = useRef(null);
   const [searchParams] = useSearchParams();
@@ -64,41 +63,39 @@ const CVBuilder = () => {
 
   const generatePDF = async () => {
     setIsGenerating(true);
-    setIsPreparingPDF(true);
-
     try {
-      // Let React render the hidden [data-cv-print] element
-      await new Promise(resolve => setTimeout(resolve, 400));
-
       const fileName = currentCV.personalInfo.fullName
         ? `${currentCV.personalInfo.fullName.replace(/\s+/g, '_')}_CV`
         : 'My_CV';
 
-      // ── Grab the rendered CV template element ──────────────────────
-      // [data-cv-print="true"] > div  is the actual 595px template root
-      const cvEl = document.querySelector('[data-cv-print="true"] > div');
+      // ── Clone the live preview CV element ─────────────────────────
+      // cvPreviewRef wraps the live <CVPreview> — its firstElementChild
+      // is the 595px wide template root with all inline styles intact.
+      const previewRoot = cvPreviewRef.current?.firstElementChild;
 
-      if (!cvEl) {
-        // Shouldn't happen, but fall back gracefully
-        throw new Error('CV element not found');
-      }
+      if (!previewRoot) throw new Error('CV preview not found');
 
-      // Clone so we can tweak without touching the live DOM
-      const clone = cvEl.cloneNode(true);
-      // Remove any leftover screen-only overrides
+      const clone = previewRoot.cloneNode(true);
+      // Strip any screen-only transform scale from the live preview panel
       clone.style.removeProperty('transform');
       clone.style.removeProperty('transformOrigin');
+      // Keep width: 595px — zoom will scale it to 794px (A4 width)
 
-      // ── Open a minimal popup that contains ONLY the CV ─────────────
-      // We use an about:blank window, write our HTML, then print.
-      // Because the window has NOTHING else on it, there is no extra
-      // whitespace and page breaks land exactly where the content ends.
-      const pw = window.open('', '_blank', 'width=900,height=800');
-      if (!pw) {
-        throw new Error('Popup blocked – please allow popups for this site.');
-      }
+      // ── Inject into a hidden iframe – completely invisible to user ──
+      const iframe = document.createElement('iframe');
+      Object.assign(iframe.style, {
+        position: 'fixed',
+        right: '0', bottom: '0',
+        width: '0', height: '0',
+        border: 'none',
+        visibility: 'hidden',
+        opacity: '0',
+      });
+      document.body.appendChild(iframe);
 
-      pw.document.write(`<!DOCTYPE html>
+      const idoc = iframe.contentDocument || iframe.contentWindow.document;
+      idoc.open();
+      idoc.write(`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -106,86 +103,61 @@ const CVBuilder = () => {
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <style>
-    /* Reset */
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    /* Preserve colours in PDF */
-    * {
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-      color-adjust: exact !important;
-    }
-    html, body {
-      background: white;
-      margin: 0;
-      padding: 0;
-    }
-    /* A4 page settings */
-    @page {
-      size: A4 portrait;
-      margin: 0;
-    }
-    /* The CV template root is 595px wide (A4 @ 72 dpi).
-       zoom: 1.335 → 595 × 1.335 ≈ 794px = A4 @ 96 dpi.
-       Using zoom (not transform) so page breaks are layout-aware. */
-    body > div {
-      zoom: 1.335;
-      font-size: 9px;
-      line-height: 1.35;
-    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+    html, body { background: white; margin: 0; padding: 0; }
+    @page { size: A4 portrait; margin: 0; }
+    /* zoom instead of transform so page breaks are layout-aware */
+    /* 595px × 1.335 ≈ 794px = A4 width @96dpi */
+    body > div { zoom: 1.335; font-size: 9px; line-height: 1.35; }
     body > div h1 { font-size: 20px; line-height: 1.15; margin-bottom: 2px; }
     body > div h2 { font-size: 10.5px; line-height: 1.2; margin-bottom: 5px; }
     body > div h3 { font-size: 10px; line-height: 1.2; margin-bottom: 2px; }
     body > div p  { font-size: 8.5px; line-height: 1.3; margin-bottom: 2px; }
     body > div li { font-size: 8.5px; line-height: 1.3; margin-bottom: 1px; }
     body > div section { margin-bottom: 8px; }
-    /* Avoid orphaned headings */
-    h1, h2, h3, h4, h5, h6 { break-after: avoid; page-break-after: avoid; }
+    h1,h2,h3,h4,h5,h6 { break-after: avoid; page-break-after: avoid; }
     img { break-inside: avoid; page-break-inside: avoid; max-width: 100%; }
   </style>
 </head>
-<body>
-  ${clone.outerHTML}
-  <script>
-    // Auto-print once fonts + images are ready, then close the popup
-    window.addEventListener('load', function () {
-      setTimeout(function () {
-        window.focus();
-        window.print();
-        // Close only after the print dialog is dismissed
-        window.addEventListener('afterprint', function () { window.close(); });
-      }, 300);
-    });
-  </script>
-</body>
+<body>${clone.outerHTML}</body>
 </html>`);
+      idoc.close();
 
-      pw.document.close();
+      // Wait for fonts / images inside the iframe to load
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+
+      // Clean up iframe after the print dialog is closed
+      const cleanup = () => {
+        iframe.remove();
+        iframe.contentWindow?.removeEventListener('afterprint', cleanup);
+      };
+      iframe.contentWindow.addEventListener('afterprint', cleanup);
+      // Fallback cleanup in case afterprint doesn't fire
+      setTimeout(cleanup, 30000);
 
       // Update live stats
       incrementCVs();
       incrementDownloads();
 
-      // Backup CV to cloud (non-blocking)
+      // Backup to cloud (non-blocking)
       try {
-        const sessionId = localStorage.getItem('cvSessionId') || `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const sessionId = localStorage.getItem('cvSessionId') ||
+          `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         localStorage.setItem('cvSessionId', sessionId);
         cvAPI.backupToCloud(currentCV, sessionId).catch(() => {});
-      } catch (e) { /* silent */ }
+      } catch (_) { /* silent */ }
 
       toast.success('Print dialog opened! Choose "Save as PDF" to download.');
       triggerSupportPopup();
     } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast.error(error.message || 'Failed to open print dialog. Please try again.');
+      console.error('PDF error:', error);
+      toast.error('Failed to generate PDF. Please try again.');
     } finally {
-      setTimeout(() => {
-        setIsGenerating(false);
-        setIsPreparingPDF(false);
-      }, 1500);
+      setIsGenerating(false);
     }
   };
 
@@ -397,12 +369,7 @@ const CVBuilder = () => {
               </div>
             </div>
 
-            {/* Hidden print-optimized preview (only rendered during PDF generation) */}
-            {isPreparingPDF && (
-              <div style={{ position: 'absolute', left: '-9999px', top: 0 }} data-cv-print="true">
-                <CVPreview data={currentCV} forPDF={false} />
-              </div>
-            )}
+            {/* No hidden print element needed – PDF uses iframe clone of live preview */}
           </div>
         </div>
       </div>
