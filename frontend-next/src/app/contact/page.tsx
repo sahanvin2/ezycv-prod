@@ -1,5 +1,8 @@
 import type { Metadata } from 'next';
-import ContactClient from './ContactClient';
+import dynamic from 'next/dynamic';
+import JsonLd, { contactPageSchema } from '@/components/seo/JsonLd';
+
+const ContactClient = dynamic(() => import('./ContactClient'), { ssr: true });
 
 export const metadata: Metadata = {
   title: 'Contact Us - Get in Touch with EzyCV',
@@ -14,5 +17,10 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <ContactClient />;
+  return (
+    <>
+      <JsonLd data={contactPageSchema} />
+      <ContactClient />
+    </>
+  );
 }

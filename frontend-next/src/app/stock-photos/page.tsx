@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
-import StockPhotosClient from './StockPhotosClient';
+import dynamic from 'next/dynamic';
 import JsonLd from '@/components/seo/JsonLd';
+
+const StockPhotosClient = dynamic(() => import('./StockPhotosClient'), { ssr: true });
 
 export const metadata: Metadata = {
   title: 'Free Stock Photos – 5K High Quality, Royalty Free Download',

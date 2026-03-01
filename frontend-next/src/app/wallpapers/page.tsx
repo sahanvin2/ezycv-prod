@@ -1,4 +1,8 @@
 import type { Metadata } from 'next';
+import dynamic from 'next/dynamic';
+import JsonLd, { wallpapersSchema } from '@/components/seo/JsonLd';
+
+const WallpapersClient = dynamic(() => import('./WallpapersClient'), { ssr: true });
 
 export const metadata: Metadata = {
   title: 'Free HD Wallpapers – Desktop & Mobile',
@@ -12,4 +16,11 @@ export const metadata: Metadata = {
   },
 };
 
-export { default } from './WallpapersClient';
+export default function Page() {
+  return (
+    <>
+      <JsonLd data={wallpapersSchema} />
+      <WallpapersClient />
+    </>
+  );
+}

@@ -66,6 +66,71 @@ export const organizationSchema = {
   ],
 };
 
+export const contactPageSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'ContactPage',
+  name: 'Contact EzyCV',
+  url: 'https://ezycv.org/contact',
+  description: 'Get in touch with the EzyCV team. We respond within 24-48 hours.',
+  publisher: {
+    '@type': 'Organization',
+    name: 'EzyCV',
+    url: 'https://ezycv.org',
+    logo: 'https://ezycv.org/logo192.png',
+  },
+};
+
+export const CV_TEMPLATE_NAMES = [
+  'Modern', 'Classic', 'Creative', 'Minimal', 'Professional',
+  'Elegant', 'Executive', 'Tech', 'Academic', 'Compact',
+];
+
+export const cvTemplatesSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Free CV Templates – EzyCV',
+  description: 'Browse 10+ professional CV templates. All free to use and customize.',
+  url: 'https://ezycv.org/cv-templates',
+  numberOfItems: 10,
+  itemListElement: CV_TEMPLATE_NAMES.map((name, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: `${name} CV Template`,
+    url: `https://ezycv.org/cv-builder?template=${name.toLowerCase()}`,
+  })),
+};
+
+export const wallpapersSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'Free HD Wallpapers – EzyCV',
+  description: 'Download stunning HD wallpapers for desktop and mobile. Nature, abstract, space, dark themes – all free.',
+  url: 'https://ezycv.org/wallpapers',
+  publisher: {
+    '@type': 'Organization',
+    name: 'EzyCV',
+    url: 'https://ezycv.org',
+    logo: 'https://ezycv.org/logo192.png',
+  },
+};
+
+export function wallpaperCategorySchema(category: string) {
+  const label = category.charAt(0).toUpperCase() + category.slice(1);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `${label} HD Wallpapers – Free Download`,
+    description: `Download free ${label.toLowerCase()} HD wallpapers for desktop & mobile. High quality, no sign-up required.`,
+    url: `https://ezycv.org/wallpapers/${category}`,
+    publisher: {
+      '@type': 'Organization',
+      name: 'EzyCV',
+      url: 'https://ezycv.org',
+      logo: 'https://ezycv.org/logo192.png',
+    },
+  };
+}
+
 export function blogPostSchema(post: {
   title: string;
   slug: string;

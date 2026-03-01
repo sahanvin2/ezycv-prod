@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import JsonLd, { cvTemplatesSchema } from '@/components/seo/JsonLd';
 
 export const metadata: Metadata = {
   title: 'CV Templates – 10+ Professional Resume Templates',
@@ -14,6 +15,8 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
+    <>
+      <JsonLd data={cvTemplatesSchema} />
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-12">
@@ -31,5 +34,6 @@ export default function Page() {
         </div>
       </div>
     </div>
+    </>
   );
 }

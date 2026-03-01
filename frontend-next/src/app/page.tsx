@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
-import HomePage from './HomeClient';
+import dynamic from 'next/dynamic';
 import JsonLd, { websiteSchema, softwareSchema, organizationSchema } from '@/components/seo/JsonLd';
+
+const HomePage = dynamic(() => import('./HomeClient'), { ssr: true });
 
 export const metadata: Metadata = {
   title: 'EzyCV – Free CV Builder, HD Wallpapers & Stock Photos',

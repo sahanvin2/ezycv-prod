@@ -1,5 +1,8 @@
 import type { Metadata } from 'next';
-import AboutClient from './AboutClient';
+import dynamic from 'next/dynamic';
+import JsonLd, { organizationSchema } from '@/components/seo/JsonLd';
+
+const AboutClient = dynamic(() => import('./AboutClient'), { ssr: true });
 
 export const metadata: Metadata = {
   title: 'About Us – Meet the Team Behind EzyCV',
@@ -15,5 +18,10 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <AboutClient />;
+  return (
+    <>
+      <JsonLd data={organizationSchema} />
+      <AboutClient />
+    </>
+  );
 }

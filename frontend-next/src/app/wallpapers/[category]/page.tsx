@@ -1,5 +1,8 @@
 import type { Metadata } from 'next';
-import WallpapersClient from '../WallpapersClient';
+import dynamic from 'next/dynamic';
+import JsonLd, { wallpaperCategorySchema } from '@/components/seo/JsonLd';
+
+const WallpapersClient = dynamic(() => import('../WallpapersClient'), { ssr: true });
 
 interface Props {
   params: Promise<{ category: string }>;
@@ -17,5 +20,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CategoryPage({ params }: Props) {
   const { category } = await params;
-  return <WallpapersClient initialCategory={category} />;
+  return (
+    <>
+      <JsonLd data={wallpaperCategorySchema(category)} />
+      <WallpapersClient initialCategory={category} />
+    </>
+  );
 }
